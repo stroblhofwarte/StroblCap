@@ -10,13 +10,13 @@ For a complete setup a MQTT broker is required in the network setup of the teles
 For Win10 the mosquitto broker is a good decision. Please do not forgett to open the
 firewall for the mosquitto process:
 
-'''
+```
 -----------------         ----------------         -----------------      ----------------
 |               |         |              |         |               |      |              |
 | StroblCap     |---------| MQTT Broker  |---------| ASCOM Driver  |------| ASCOM Client |
 | WEMOS D1 mini |         | Port 1883    |         |               |      | N.I.N.A.     |
 -----------------         ----------------         -----------------      ----------------
-'''
+```
 The ASCOM driver is compiled with Visual Studio 2019 Communitiy. It requires the M2Mqtt.Net 
 dll in a signed version, otherwise ASCOM will not load the driver. The signed M2Mqtt.Net.dll 
 is in the Signed3rdParty directory. It is created out of the Nuget M2Mqtt.Net package via the 
