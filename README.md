@@ -5,7 +5,10 @@ a MQTT broker and supports eight topics:
   Astro/StroblCap/ch[1..4] to set the output power between a value of 0-100 (%)
 and
   Astro/StroblCap/ch[1..4]/state to report back the power level (also 0-100).
- 
+
+The MQTT topics use the power value + 100, the valid range from 0-100(%) is mapped to
+100-200. The payload contains only one single byte.
+
 For a complete setup a MQTT broker is required in the network setup of the telescope.
 For Win10 the mosquitto broker is a good decision. Please do not forgett to open the
 firewall for the mosquitto process:
