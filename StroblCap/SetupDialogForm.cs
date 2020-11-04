@@ -33,19 +33,24 @@ namespace ASCOM.StroblCap
             Switch.ipAddress = (string)textBoxIpAddress.Text;
             Switch._names[0] = textBoxName1.Text;
             Switch._names[1] = textBoxName2.Text;
-            Switch._names[2] = textBoxName3.Text;
-            Switch._names[3] = textBoxName4.Text;
+            Switch._names[2] = textBoxName1.Text + " Activation";
+            Switch._names[3] = textBoxName2.Text + " Activation";
+            Switch._names[4] = textBoxName1.Text + " Auto";
+            Switch._names[5] = textBoxName2.Text + " Auto";
 
             Switch._namesDesc[0] = textBoxDesc1.Text;
             Switch._namesDesc[1] = textBoxDesc2.Text;
-            Switch._namesDesc[2] = textBoxDesc3.Text;
-            Switch._namesDesc[3] = textBoxDesc4.Text;
+            Switch._namesDesc[2] = "Activation of the " + textBoxName1.Text + " Channel at all";
+            Switch._namesDesc[3] = "Activation of the " + textBoxName2.Text + " Channel at all";
+            Switch._namesDesc[4] = "Use environmental sensor to control the " + textBoxName1.Text + "Channel";
+            Switch._namesDesc[5] = "Use environmental sensor to control the " + textBoxName2.Text + "Channel";
 
-            Switch._swValues[0] = double.Parse(textBoxDefault1.Text);
-            Switch._swValues[1] = double.Parse(textBoxDefault2.Text);
-            Switch._swValues[2] = double.Parse(textBoxDefault3.Text);
-            Switch._swValues[3] = double.Parse(textBoxDefault4.Text);
-
+            Switch._swValues[0] = textBoxDefault1.Text;
+            Switch._swValues[1] = textBoxDefault2.Text;
+            Switch._swValues[2] = "true";
+            Switch._swValues[3] = "true";
+            Switch._swValues[4] = "true";
+            Switch._swValues[5] = "true";
 
             tl.Enabled = chkTrace.Checked;
         }
@@ -77,22 +82,15 @@ namespace ASCOM.StroblCap
             chkTrace.Checked = tl.Enabled;
             textBoxIpAddress.Text = Switch.ipAddress;
 
-
-
             textBoxName1.Text = Switch._names[0];
             textBoxName2.Text = Switch._names[1];
-            textBoxName3.Text = Switch._names[2];
-            textBoxName4.Text = Switch._names[3];
-
+          
             textBoxDesc1.Text = Switch._namesDesc[0];
-            textBoxDesc2.Text = Switch._namesDesc[1];
-            textBoxDesc3.Text = Switch._namesDesc[2];
-            textBoxDesc4.Text = Switch._namesDesc[3];
+            textBoxDesc2.Text = Switch._namesDesc[1];     
 
             textBoxDefault1.Text = Switch._swValues[0].ToString();
             textBoxDefault2.Text = Switch._swValues[1].ToString();
-            textBoxDefault3.Text = Switch._swValues[2].ToString();
-            textBoxDefault4.Text = Switch._swValues[3].ToString();
+         
 
         }
     }

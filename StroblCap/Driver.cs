@@ -70,6 +70,12 @@ namespace ASCOM.StroblCap
         /// </summary>
         /// 
          #region Properties
+
+        private enum enumSwitchType
+        {
+            analog, dio
+        }
+
         internal static string driverID = "ASCOM.StroblCap.Switch";
         // TODO Change the descriptive string for your driver then remove this line
         /// <summary>
@@ -89,22 +95,25 @@ namespace ASCOM.StroblCap
         private string _clientId;
         private string _subCh1 = "Astro/StroblCap/ch1/state";
         private string _subCh2 = "Astro/StroblCap/ch2/state";
-        private string _subCh3 = "Astro/StroblCap/ch3/state";
-        private string _subCh4 = "Astro/StroblCap/ch4/state";
+        private string _subCh3 = "Astro/StroblCap/ch1/stateOnOff";
+        private string _subCh4 = "Astro/StroblCap/ch2/stateOnOff";
+        private string _subCh5 = "Astro/StroblCap/ch1/stateAuto";
+        private string _subCh6 = "Astro/StroblCap/ch2/stateAuto";
 
-        private string[] _pubCh = { "Astro/StroblCap/ch1", "Astro/StroblCap/ch2", "Astro/StroblCap/ch3", "Astro/StroblCap/ch4" };
+        private string[] _pubCh = { "Astro/StroblCap/ch1", "Astro/StroblCap/ch2", "Astro/StroblCap/ch1/OnOff", "Astro/StroblCap/ch2/OnOff", "Astro/StroblCap/ch1/auto", "Astro/StroblCap/ch2/auto" };
 
-        internal static string[] _names = { "", "", "", "" };
-        private string[] _namesDefault = {"AnalogSW1", "AnalogSW2", "AnalogSW3", "AnalogSW4"};
-        private string[] _nameKeys = { "sw1", "sw2", "sw3", "sw4" };
+        internal static string[] _names = { "", "", "", "", "", "" };
+        private string[] _namesDefault = {"AnalogSW1", "AnalogSW2", "Channel1OnOff", "Channel1OnOff", "Channel1Auto", "Channel2Auto" };
+        private string[] _nameKeys = { "sw1", "sw2", "sw3", "sw4", "sw5", "sw6" };
 
-        internal static string[] _namesDesc = { "", "", "", "" };
-        private string[] _namesDescDefault = { "Description1", "Description2", "Description3", "Description4" };
-        private string[] _nameDescKeys = { "swDesc1", "swDesc2", "swDesc3", "swDesc4" };
+        internal static string[] _namesDesc = { "", "", "", "", "", "" };
+        private string[] _namesDescDefault = { "Analog Switch Channel 1", "Analog Switch Channel 2", "Channel 1 activation", "Channel 2 activation", "Channel 1 auto mode using environmental sensor", "Channel 2 auto mode using environmental sensor" };
+        private string[] _nameDescKeys = { "swDesc1", "swDesc2", "swDesc3", "swDesc4", "swDesc5", "swDesc6" };
 
-        internal static double[] _swValues = { 50.0, 50.0, 50.0, 50.0 };
-        private string[] _valuesDefault = { "50", "50", "50", "50" };
-        private string[] _valuesKeys = { "startup1", "startup2", "startup3", "startup4" };
+        internal static string[] _swValues = { "50.0", "50.0", "true", "true", "true", "true" };
+        private string[] _valuesDefault = { "50", "50", "true", "true", "true", "true" };
+        private string[] _valuesKeys = { "startup1", "startup2", "startup3", "startup4", "startup5", "startup6" };
+        private enumSwitchType[] _switchTypes = { enumSwitchType.analog, enumSwitchType.analog, enumSwitchType.dio, enumSwitchType.dio, enumSwitchType.dio, enumSwitchType.dio };
 
         #endregion
 
@@ -142,7 +151,7 @@ namespace ASCOM.StroblCap
             connectedState = false; // Initialise connected to false
             utilities = new Util(); //Initialise util object
             astroUtilities = new AstroUtils(); // Initialise astro-utilities object
-            //TODO: Implement your additional construction here
+
 
             tl.LogMessage("Switch", "Completed initialisation");
         }
@@ -263,12 +272,19 @@ namespace ASCOM.StroblCap
                         _clientId = Guid.NewGuid().ToString();
                         _client.Connect(_clientId);
                         // Subcribe to the chennels with QoS 1
-                        _client.Subscribe(new string[] { _subCh1, _subCh2, _subCh3, _subCh4 }, new byte[] { 1, 1, 1, 1 });
+                        _client.Subscribe(new string[] { _subCh1, _subCh2, _subCh3, _subCh4, _subCh5, _subCh6 }, new byte[] { 1, 1, 1, 1, 1, 1 });
                         connectedState = true;
                         for (int i = 0; i < numSwitch; i++)
                         {
                             byte[] payload = new byte[1];
-                            payload[0] = ((byte)(_swValues[i] + 100.0));
+                            if(_switchTypes[i] == enumSwitchType.analog)
+                                payload[0] = ((byte)(int.Parse(_swValues[i]) + 100.0));
+                            if (_switchTypes[i] == enumSwitchType.dio)
+                            {
+                                payload[0] = 0;
+                                if (bool.Parse(_swValues[i]))
+                                    payload[0] = 1;
+                            }
                             _client.Publish(_pubCh[i], payload, 1, true);
                         }
                     }
@@ -296,19 +312,39 @@ namespace ASCOM.StroblCap
             {
                 if (e.Topic == _subCh1)
                 {
-                    _swValues[0] = (double)e.Message[0] -100.0;
+                    _swValues[0] = ((double)e.Message[0] -100.0).ToString();
                 }
                 if (e.Topic == _subCh2)
                 {
-                    _swValues[1] = (double)e.Message[0] -100.0;
+                    _swValues[1] = ((double)e.Message[0] - 100.0).ToString();
                 }
                 if (e.Topic == _subCh3)
                 {
-                    _swValues[2] = (double)e.Message[0] -100.0;
+                    if (e.Message[0] == 1)
+                        _swValues[2] = "true";
+                    else
+                        _swValues[2] = "false";
                 }
                 if (e.Topic == _subCh4)
                 {
-                    _swValues[3] = (double)e.Message[0] -100.0;
+                    if (e.Message[0] == 1)
+                        _swValues[3] = "true";
+                    else
+                        _swValues[3] = "false";
+                }
+                if (e.Topic == _subCh5)
+                {
+                    if (e.Message[0] == 1)
+                        _swValues[4] = "true";
+                    else
+                        _swValues[4] = "false";
+                }
+                if (e.Topic == _subCh6)
+                {
+                    if (e.Message[0] == 1)
+                        _swValues[5] = "true";
+                    else
+                        _swValues[5] = "false";
                 }
             }
             catch (Exception ex)
@@ -374,7 +410,7 @@ namespace ASCOM.StroblCap
 
         #region ISwitchV2 Implementation
 
-        private short numSwitch = 4;
+        private short numSwitch = 6;
 
         /// <summary>
         /// The number of switches managed by this driver
@@ -422,7 +458,6 @@ namespace ASCOM.StroblCap
         public string GetSwitchDescription(short id)
         {
             Validate("GetSwitchDescription", id);
-            tl.LogMessage("GetSwitchDescription", string.Format("GetSwitchDescription({0}) - not implemented", id));
             return _namesDesc[id];
         }
 
@@ -442,9 +477,6 @@ namespace ASCOM.StroblCap
             // default behavour is to report true
             tl.LogMessage("CanWrite", string.Format("CanWrite({0}) - default true", id));
             return true;
-            // implementation should report the correct behaviour
-            //tl.LogMessage("CanWrite", string.Format("CanWrite({0}) - not implemented", id));
-            //throw new MethodNotImplementedException("CanWrite");
         }
 
         #region boolean switch members
@@ -461,7 +493,10 @@ namespace ASCOM.StroblCap
         {
             Validate("GetSwitch", id);
             tl.LogMessage("GetSwitch", string.Format("GetSwitch({0}) - not implemented", id));
-            throw new MethodNotImplementedException("GetSwitch");
+            if(_switchTypes[id] == enumSwitchType.analog)
+                throw new MethodNotImplementedException("GetSwitch");
+            bool ret = bool.Parse(_swValues[id]);
+            return ret;
         }
 
         /// <summary>
@@ -481,8 +516,14 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitch", str);
                 throw new MethodNotImplementedException(str);
             }
-            tl.LogMessage("SetSwitch", string.Format("SetSwitch({0}) = {1} - not implemented", id, state));
-            throw new MethodNotImplementedException("SetSwitch");
+            if (_switchTypes[id] == enumSwitchType.analog)
+                throw new MethodNotImplementedException("SetSwitch");
+            _swValues[id] = state.ToString();
+            byte[] payload = new byte[1];
+            payload[0] = 0;
+            if (state)
+                payload[0] = 1;
+            _client.Publish(_pubCh[id], payload, 1, true);
         }
 
         #endregion
@@ -498,11 +539,8 @@ namespace ASCOM.StroblCap
         public double MaxSwitchValue(short id)
         {
             Validate("MaxSwitchValue", id);
-            // boolean switch implementation:
             return 100;
-            // or
-            //tl.LogMessage("MaxSwitchValue", string.Format("MaxSwitchValue({0}) - not implemented", id));
-            //throw new MethodNotImplementedException("MaxSwitchValue");
+           
         }
 
         /// <summary>
@@ -514,11 +552,7 @@ namespace ASCOM.StroblCap
         public double MinSwitchValue(short id)
         {
             Validate("MinSwitchValue", id);
-            // boolean switch implementation:
             return 0;
-            // or
-            //tl.LogMessage("MinSwitchValue", string.Format("MinSwitchValue({0}) - not implemented", id));
-            //throw new MethodNotImplementedException("MinSwitchValue");
         }
 
         /// <summary>
@@ -532,11 +566,8 @@ namespace ASCOM.StroblCap
         public double SwitchStep(short id)
         {
             Validate("SwitchStep", id);
-            // boolean switch implementation:
             return 1;
-            // or
-            //tl.LogMessage("SwitchStep", string.Format("SwitchStep({0}) - not implemented", id));
-            //throw new MethodNotImplementedException("SwitchStep");
+
         }
 
         /// <summary>
@@ -548,7 +579,9 @@ namespace ASCOM.StroblCap
         public double GetSwitchValue(short id)
         {
             Validate("GetSwitchValue", id);
-            return _swValues[id];
+            if (_switchTypes[id] == enumSwitchType.dio)
+                throw new MethodNotImplementedException("GetSwitchValue");
+            return double.Parse(_swValues[id]);
         }
 
         /// <summary>
@@ -567,6 +600,9 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitchValue", string.Format("SetSwitchValue({0}) - Cannot write", id));
                 return;
             }
+            if (_switchTypes[id] == enumSwitchType.dio)
+                throw new MethodNotImplementedException("SetSwitchValue");
+
             byte[] payload = new byte[1];
             payload[0] = ((byte)(value+100.0));
             _client.Publish(_pubCh[id], payload, 1, true);
@@ -748,7 +784,7 @@ namespace ASCOM.StroblCap
                 for (int i = 0; i < numSwitch; i++)
                     _namesDesc[i] = driverProfile.GetValue(driverID, _nameDescKeys[i], string.Empty, _namesDescDefault[i]);
                 for (int i = 0; i < numSwitch; i++)
-                    _swValues[i] = double.Parse(driverProfile.GetValue(driverID, _valuesKeys[i], string.Empty, _valuesDefault[i]));
+                    _swValues[i] = driverProfile.GetValue(driverID, _valuesKeys[i], string.Empty, _valuesDefault[i]);
             }
         }
 
