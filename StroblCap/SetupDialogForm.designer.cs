@@ -38,20 +38,12 @@ namespace ASCOM.StroblCap
             this.chkTrace = new System.Windows.Forms.CheckBox();
             this.textBoxName1 = new System.Windows.Forms.TextBox();
             this.textBoxName2 = new System.Windows.Forms.TextBox();
-            this.textBoxName3 = new System.Windows.Forms.TextBox();
-            this.textBoxName4 = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
             this.textBoxDesc1 = new System.Windows.Forms.TextBox();
             this.textBoxDesc2 = new System.Windows.Forms.TextBox();
-            this.textBoxDesc3 = new System.Windows.Forms.TextBox();
-            this.textBoxDesc4 = new System.Windows.Forms.TextBox();
             this.textBoxDefault1 = new System.Windows.Forms.TextBox();
             this.textBoxDefault2 = new System.Windows.Forms.TextBox();
-            this.textBoxDefault3 = new System.Windows.Forms.TextBox();
-            this.textBoxDefault4 = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
@@ -163,22 +155,6 @@ namespace ASCOM.StroblCap
             this.textBoxName2.TabIndex = 13;
             this.textBoxName2.Text = "AnalogSW2";
             // 
-            // textBoxName3
-            // 
-            this.textBoxName3.Location = new System.Drawing.Point(127, 233);
-            this.textBoxName3.Name = "textBoxName3";
-            this.textBoxName3.Size = new System.Drawing.Size(130, 20);
-            this.textBoxName3.TabIndex = 14;
-            this.textBoxName3.Text = "AnalogSW3";
-            // 
-            // textBoxName4
-            // 
-            this.textBoxName4.Location = new System.Drawing.Point(127, 259);
-            this.textBoxName4.Name = "textBoxName4";
-            this.textBoxName4.Size = new System.Drawing.Size(130, 20);
-            this.textBoxName4.TabIndex = 15;
-            this.textBoxName4.Text = "AnalogSW4";
-            // 
             // label4
             // 
             this.label4.AutoSize = true;
@@ -199,26 +175,6 @@ namespace ASCOM.StroblCap
             this.label5.TabIndex = 17;
             this.label5.Text = "Switch Name 2:";
             // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.ForeColor = System.Drawing.Color.Silver;
-            this.label6.Location = new System.Drawing.Point(26, 236);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(82, 13);
-            this.label6.TabIndex = 18;
-            this.label6.Text = "Switch Name 3:";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.ForeColor = System.Drawing.Color.Silver;
-            this.label7.Location = new System.Drawing.Point(26, 262);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(82, 13);
-            this.label7.TabIndex = 19;
-            this.label7.Text = "Switch Name 4:";
-            // 
             // textBoxDesc1
             // 
             this.textBoxDesc1.Location = new System.Drawing.Point(263, 181);
@@ -235,22 +191,6 @@ namespace ASCOM.StroblCap
             this.textBoxDesc2.TabIndex = 21;
             this.textBoxDesc2.Text = "Description2";
             // 
-            // textBoxDesc3
-            // 
-            this.textBoxDesc3.Location = new System.Drawing.Point(263, 233);
-            this.textBoxDesc3.Name = "textBoxDesc3";
-            this.textBoxDesc3.Size = new System.Drawing.Size(227, 20);
-            this.textBoxDesc3.TabIndex = 22;
-            this.textBoxDesc3.Text = "Description3";
-            // 
-            // textBoxDesc4
-            // 
-            this.textBoxDesc4.Location = new System.Drawing.Point(263, 259);
-            this.textBoxDesc4.Name = "textBoxDesc4";
-            this.textBoxDesc4.Size = new System.Drawing.Size(227, 20);
-            this.textBoxDesc4.TabIndex = 23;
-            this.textBoxDesc4.Text = "Description4";
-            // 
             // textBoxDefault1
             // 
             this.textBoxDefault1.Location = new System.Drawing.Point(496, 181);
@@ -266,22 +206,6 @@ namespace ASCOM.StroblCap
             this.textBoxDefault2.Size = new System.Drawing.Size(73, 20);
             this.textBoxDefault2.TabIndex = 25;
             this.textBoxDefault2.Text = "50";
-            // 
-            // textBoxDefault3
-            // 
-            this.textBoxDefault3.Location = new System.Drawing.Point(496, 233);
-            this.textBoxDefault3.Name = "textBoxDefault3";
-            this.textBoxDefault3.Size = new System.Drawing.Size(73, 20);
-            this.textBoxDefault3.TabIndex = 26;
-            this.textBoxDefault3.Text = "50";
-            // 
-            // textBoxDefault4
-            // 
-            this.textBoxDefault4.Location = new System.Drawing.Point(496, 259);
-            this.textBoxDefault4.Name = "textBoxDefault4";
-            this.textBoxDefault4.Size = new System.Drawing.Size(73, 20);
-            this.textBoxDefault4.TabIndex = 27;
-            this.textBoxDefault4.Text = "50";
             // 
             // label8
             // 
@@ -322,20 +246,12 @@ namespace ASCOM.StroblCap
             this.Controls.Add(this.label10);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.label8);
-            this.Controls.Add(this.textBoxDefault4);
-            this.Controls.Add(this.textBoxDefault3);
             this.Controls.Add(this.textBoxDefault2);
             this.Controls.Add(this.textBoxDefault1);
-            this.Controls.Add(this.textBoxDesc4);
-            this.Controls.Add(this.textBoxDesc3);
             this.Controls.Add(this.textBoxDesc2);
             this.Controls.Add(this.textBoxDesc1);
-            this.Controls.Add(this.label7);
-            this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
-            this.Controls.Add(this.textBoxName4);
-            this.Controls.Add(this.textBoxName3);
             this.Controls.Add(this.textBoxName2);
             this.Controls.Add(this.textBoxName1);
             this.Controls.Add(this.chkTrace);
@@ -371,20 +287,12 @@ namespace ASCOM.StroblCap
         private System.Windows.Forms.CheckBox chkTrace;
         private System.Windows.Forms.TextBox textBoxName1;
         private System.Windows.Forms.TextBox textBoxName2;
-        private System.Windows.Forms.TextBox textBoxName3;
-        private System.Windows.Forms.TextBox textBoxName4;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox textBoxDesc1;
         private System.Windows.Forms.TextBox textBoxDesc2;
-        private System.Windows.Forms.TextBox textBoxDesc3;
-        private System.Windows.Forms.TextBox textBoxDesc4;
         private System.Windows.Forms.TextBox textBoxDefault1;
         private System.Windows.Forms.TextBox textBoxDefault2;
-        private System.Windows.Forms.TextBox textBoxDefault3;
-        private System.Windows.Forms.TextBox textBoxDefault4;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label label10;

@@ -34,11 +34,11 @@ Name: "{cf}\ASCOM\Uninstall\Switch\StroblCap"
 ; TODO: Add subfolders below {app} as needed (e.g. Name: "{app}\MyFolder")
 
 [Files]
-Source: "C:\_develop\StroblCap\StroblCap\StroblCap\bin\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}"
-Source: "C:\_develop\StroblCap\StroblCap\StroblCap\bin\Release\M2Mqtt.Net.dll"; DestDir: "{app}"
+Source: "C:\_develop\StroblCap\StroblCap\bin\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}"
+Source: "C:\_develop\StroblCap\StroblCap\bin\Release\M2Mqtt.Net.dll"; DestDir: "{app}"
 
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
-Source: "C:\_develop\StroblCap\StroblCap\StroblCap\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
+Source: "C:\_develop\StroblCap\StroblCap\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
 ; TODO: Add other files needed by your driver here (add subfolders above)
 
 

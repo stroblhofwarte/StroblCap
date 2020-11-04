@@ -281,9 +281,9 @@ namespace ASCOM.StroblCap
                                 payload[0] = ((byte)(int.Parse(_swValues[i]) + 100.0));
                             if (_switchTypes[i] == enumSwitchType.dio)
                             {
-                                payload[0] = 0;
+                                payload[0] = 1;
                                 if (bool.Parse(_swValues[i]))
-                                    payload[0] = 1;
+                                    payload[0] = 2;
                             }
                             _client.Publish(_pubCh[i], payload, 1, true);
                         }
@@ -320,28 +320,28 @@ namespace ASCOM.StroblCap
                 }
                 if (e.Topic == _subCh3)
                 {
-                    if (e.Message[0] == 1)
+                    if (e.Message[0] == 2)
                         _swValues[2] = "true";
                     else
                         _swValues[2] = "false";
                 }
                 if (e.Topic == _subCh4)
                 {
-                    if (e.Message[0] == 1)
+                    if (e.Message[0] == 2)
                         _swValues[3] = "true";
                     else
                         _swValues[3] = "false";
                 }
                 if (e.Topic == _subCh5)
                 {
-                    if (e.Message[0] == 1)
+                    if (e.Message[0] == 2)
                         _swValues[4] = "true";
                     else
                         _swValues[4] = "false";
                 }
                 if (e.Topic == _subCh6)
                 {
-                    if (e.Message[0] == 1)
+                    if (e.Message[0] == 2)
                         _swValues[5] = "true";
                     else
                         _swValues[5] = "false";
@@ -518,11 +518,10 @@ namespace ASCOM.StroblCap
             }
             if (_switchTypes[id] == enumSwitchType.analog)
                 throw new MethodNotImplementedException("SetSwitch");
-            _swValues[id] = state.ToString();
             byte[] payload = new byte[1];
-            payload[0] = 0;
+            payload[0] = 1;
             if (state)
-                payload[0] = 1;
+                payload[0] = 2;
             _client.Publish(_pubCh[id], payload, 1, true);
         }
 
