@@ -107,7 +107,7 @@ namespace ASCOM.StroblCap
         private string[] _nameKeys = { "sw1", "sw2", "sw3", "sw4", "sw5", "sw6" };
 
         internal static string[] _namesDesc = { "", "", "", "", "", "" };
-        private string[] _namesDescDefault = { "Analog Switch Channel 1", "Analog Switch Channel 2", "Channel 1 activation", "Channel 2 activation", "Channel 1 auto mode using environmental sensor", "Channel 2 auto mode using environmental sensor" };
+        private string[] _namesDescDefault = { "Channel 1 power, 1-100%", "Channel 2 power, 1-100%", "Channel 1 activation", "Channel 2 activation", "Channel 1 auto mode using environmental sensor", "Channel 2 auto mode using environmental sensor" };
         private string[] _nameDescKeys = { "swDesc1", "swDesc2", "swDesc3", "swDesc4", "swDesc5", "swDesc6" };
 
         internal static string[] _swValues = { "50.0", "50.0", "true", "true", "true", "true" };
