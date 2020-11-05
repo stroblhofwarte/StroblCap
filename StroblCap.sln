@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StroblCap", "StroblCap\Stro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StroblCap.test", "StroblCap.test\StroblCap.test.csproj", "{D5207217-61C7-4E94-8097-91DBACE57D2A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvironmentPlot", "EnvironmentPlot\EnvironmentPlot.csproj", "{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,14 @@ Global
 		{D5207217-61C7-4E94-8097-91DBACE57D2A}.Release|Any CPU.ActiveCfg = Release|x86
 		{D5207217-61C7-4E94-8097-91DBACE57D2A}.Release|x86.ActiveCfg = Release|x86
 		{D5207217-61C7-4E94-8097-91DBACE57D2A}.Release|x86.Build.0 = Release|x86
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Debug|x86.Build.0 = Debug|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Release|x86.ActiveCfg = Release|Any CPU
+		{F71DE1B0-B8B1-4926-AB13-BAFCA1CFEC31}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
