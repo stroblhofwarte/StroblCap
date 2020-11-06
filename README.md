@@ -83,5 +83,5 @@ where you want to have it on the screen and the size you need. This position and
 
 ![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
 
-Screenshot where the EnvironmentPlot is running in the bottom part of the screen.
+Screenshot where the EnvironmentPlot is running in the bottom part of the screen. A BME280 sensor is connected only for channel 1, the second channel does not send any values.
 
