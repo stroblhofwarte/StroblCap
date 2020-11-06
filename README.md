@@ -27,3 +27,10 @@ SignM2Mqtt.bat file.
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
 
+The hardware for this project based on a WEMOS D1 mini and controls the dew caps with a single 
+MOSFET per channel via pwm. 
+Furthermore the firmware supports two environment sensors (BMP280 only) for each channel. The small 
+BMP280 is mounted inside the dew cap near the optical surface and measure the temperature and the
+humidity. Out of this data the dewpoint is calculated. If the differece between the temperature and
+the dewpoint is less than 5.0 °C, the heater is switched on. The heater is controlled by a simple
+PI controler (in software) to set the power to a value to keep the 5.0 °C difference.
