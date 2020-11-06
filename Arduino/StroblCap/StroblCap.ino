@@ -1,6 +1,33 @@
+/* 
+ * This file is part of the StroblCap projekt (https://astro.stroblhof-oberrohrbach.de)
+ * Copyright (c) 2020 Othmar Ehrhardt
+ * 
+ * This program is free software: you can redistribute it and/or modify  
+ * it under the terms of the GNU General Public License as published by  
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * This is the firmware for the WMOS D1 mini controller. The communication
+ * with the ASCOM driver is done via the MQTT protocol.
+ * 
+ * The dewpoint calculation follows the code example from 
+ * https://myscope.net/taupunkttemperatur/, Rortner.
+ * 
+ * The PID controler was inspired by https://forum.arduino.cc/index.php?topic=433030.0,
+ * guntherb.
+ * 
+ */
+
 #include <FS.h>  
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
-
+#include <pins_arduino.h>
 //needed for library
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
@@ -8,48 +35,25 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>  
 #include <stdlib.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
+// Hardware settings
+int CHANNEL1 = D5;
+int CHANNEL2 = D6;
 
-/*
- * var t = 25; // Luft-Temperatur (°C)
-var r = 40; // relative Luftfeuchtigkeit (%)
-var tp = taupunkt(t, r);
- 
-// Taupunkt Berechnung
-function taupunkt(t, r) {
-  // Konstante
-  var mw = 18.016; // Molekulargewicht des Wasserdampfes (kg/kmol)
-  var gk = 8214.3; // universelle Gaskonstante (J/(kmol*K))
-  var t0 = 273.15; // Absolute Temperatur von 0 °C (Kelvin)
-  var tk = t + t0; // Temperatur in Kelvin
- 
-  var a, b;
-  if (t >= 0) {
-    a = 7.5;
-    b = 237.3;
-  } else if (t < 0) {
-    a = 7.6;
-    b = 240.7;
-  }
- 
-  // Sättigungsdampfdruck (hPa)
-  var sdd = 6.1078 * Math.pow(10, (a*t)/(b+t));
- 
-  // Dampfdruck (hPa)
-  var dd = sdd * (r/100);
- 
-  // Wasserdampfdichte bzw. absolute Feuchte (g/m3)
-  af = Math.pow(10,5) * mw/gk * dd/tk;
- 
-  // v-Parameter
-  v = Math.log10(dd/6.1078);
- 
-  // Taupunkttemperatur (°C)
-  td = (b*v) / (a-v);
-  return { td: td, af: af, dd: dd };  
-}
- */
- 
+double pwmFactor = PWMRANGE / 100.0;
+
+Adafruit_BME280 bmeCh1; // I2C
+Adafruit_BME280 bmeCh2; // I2C
+byte bme280_ch1addr = 0x76;
+byte bme280_ch2addr = 0x77;
+bool bme280_ch1active = false;
+bool bme280_ch2active = false;
+
+const String Channel1 = "ch1";
+const String Channel2 = "ch2";
+
 char mqtt_server[40];
 char mqtt_port[6] = "1883";
 String clientId = "StroblCap-";
@@ -69,6 +73,9 @@ String DewChannelReport2OnOff_topic = "Astro/StroblCap/ch2/stateOnOff";
 String DewChannelReport1Auto_topic = "Astro/StroblCap/ch1/stateAuto";
 String DewChannelReport2Auto_topic = "Astro/StroblCap/ch2/stateAuto";
 
+String BME280_topic = "Astro/StroblCap/Env/";
+
+bool mqttconnected = false;
 
 int pwm1;
 int pwm2;
@@ -108,7 +115,23 @@ unsigned long timeout;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  pinMode(CHANNEL1,OUTPUT);
+  pinMode(CHANNEL2,OUTPUT);
+  Serial.println("**********************************************");
+  // Check for BME280 environmental sensors:
   
+  if (bmeCh1.begin(bme280_ch1addr, &Wire))
+  {
+    bme280_ch1active = true;
+    Serial.println("BME280 for Ch1 found!");
+  }
+  if (bmeCh2.begin(bme280_ch2addr, &Wire))
+  {
+    bme280_ch2active = true;
+    Serial.println("BME280 for Ch2 found!");
+  }
+
+    
   //set led pin as output
   pinMode(BUILTIN_LED, INPUT);
   //read configuration from FS json
@@ -290,11 +313,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
       client.publish(DewChannelReport2Auto_topic.c_str(), pubPayload);
     }
   }
+  SetPwmOnChannel();
 }
 
 void reconnect() {
   // Loop until we're reconnected
-  while (!client.connected()) {
+  if (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
@@ -305,6 +329,7 @@ void reconnect() {
       client.subscribe(DewChannel2OnOff_topic.c_str());
       client.subscribe(DewChannel1Auto_topic.c_str());
       client.subscribe(DewChannel2Auto_topic.c_str());
+      mqttconnected = true;
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -315,9 +340,199 @@ void reconnect() {
   }
 }
 
+double DewPoint(double temp, double humidity)
+{
+  // Konstante
+  double mw = 18.016; // Molekulargewicht des Wasserdampfes (kg/kmol)
+  double gk = 8214.3; // universelle Gaskonstante (J/(kmol*K))
+  double t0 = 273.15; // Absolute Temperatur von 0 °C (Kelvin)
+  double tk = temp + t0; // Temperatur in Kelvin
+ 
+  double a, b;
+  if (temp >= 0) {
+    a = 7.5;
+    b = 237.3;
+  } else if (temp < 0) {
+    a = 7.6;
+    b = 240.7;
+  }
+ 
+  // Sättigungsdampfdruck (hPa)
+  double sdd = 6.1078 * pow(10, (a*temp)/(b+temp));
+ 
+  // Dampfdruck (hPa)
+  double dd = sdd * (humidity/100);
+ 
+  // Wasserdampfdichte bzw. absolute Feuchte (g/m3)
+  double af = pow(10,5) * mw/gk * dd/tk;
+ 
+  // v-Parameter
+  double v = log10(dd/6.1078);
+ 
+  // Taupunkttemperatur (°C)
+  double td = (b*v) / (a-v);
+  return td;
+}
+
+void EnvironmentReadout(Adafruit_BME280 bme, String ch)
+{
+  double temp = bme.readTemperature();
+  double hum = bme.readHumidity();
+  double pres = bme.readPressure() / 100.0F;
+  double dew = DewPoint(temp, hum);
+  
+  Serial.print("Temperature = ");
+  Serial.print(temp);
+  Serial.println(" *C");
+
+  Serial.print(pres);
+  Serial.println(" hPa");
+
+  Serial.print("Humidity = ");
+  Serial.print(hum);
+  Serial.println(" %");
+
+  Serial.print("Dewpoint = ");
+  Serial.print(dew);
+  Serial.println(" *C");
+
+  if(mqttconnected) PublishEnvironment(ch ,temp, hum, pres);
+  if(ch == Channel1) SetPower(ch, temp, dew);
+  if(ch == Channel2) SetPower(ch, temp, dew);
+}
+
+void PublishEnvironment(String ch, double temp, double hum, double pres)
+{
+  double dewpoint = DewPoint(temp, hum);
+
+  String temp_topic = BME280_topic + ch + "/Temp";
+  String pres_topic = BME280_topic + ch + "/Pressure";
+  String hum_topic = BME280_topic + ch + "/Humidity";
+  String dew_topic = BME280_topic + ch + "/Dewpoint";
+
+  String tempPayload = String(temp);
+  String presPayload = String(pres);
+  String humPayload = String(hum);
+  String dewPayload = String(dewpoint);
+
+  client.publish(temp_topic.c_str(), tempPayload.c_str());
+  client.publish(pres_topic.c_str(), presPayload.c_str());
+  client.publish(hum_topic.c_str(), humPayload.c_str());
+  client.publish(dew_topic.c_str(), dewPayload.c_str());
+}
+
+
+double dewPointDiff = 5.0;
+
+double KpCh1 = 50;
+double KiCh1 = 0.01;
+double outICh1 = 0.0;
+
+double KpCh2 = 50;
+double KiCh2 = 0.01;
+double outICh2 = 0.0;
+
+double PID(double soll, double ist, double Kp, double Ki, double *outI)
+{
+  double outP = (soll - ist ) * Kp;
+  *outI += (soll - ist) * Ki;   // Ki = 0,2
+  if(*outI < 0.0) *outI = 0.0;
+  double out = outP + *outI;
+  return out;
+}
+
+void SetPower(String ch, double temp, double dewpoint)
+{
+  if(ch == Channel1)
+  {
+    Serial.println("Calculate power Channel 1 ....");
+    char payload[2];
+    if(!ch1OnOff)
+    {
+      payload[0] = 100; // means 0...
+      payload[1] = 0;
+      client.publish(DewChannelReport1_topic.c_str(), payload);
+    }
+    else
+    {
+      if(ch1Auto)
+      {
+        double out = PID(dewPointDiff, temp-dewpoint, KpCh1, KiCh1, &outICh1);
+        if(out > 100.0) out = 100.0;
+        if(out < 0.0) out = 0.0;
+        pwm1 = (int)out;
+        Serial.print("PID OUT: ");
+        Serial.println(out);
+        Serial.print("Diff: ");
+        Serial.println(temp-dewpoint);
+      }
+      payload[0] = pwm1 + 100;
+      payload[1] = 0;
+      client.publish(DewChannelReport1_topic.c_str(), payload);  
+    }
+  }
+
+  if(ch == Channel2)
+  {
+    Serial.println("Calculate power Channel 2 ....");
+    char payload[2];
+    if(!ch2OnOff)
+    {
+      payload[0] = 100; // means 0...
+      payload[1] = 0;
+      client.publish(DewChannelReport2_topic.c_str(), payload);
+    }
+    else
+    {
+      if(ch2Auto)
+      {
+        double out = PID(dewPointDiff, temp-dewpoint, KpCh2, KiCh2, &outICh2);
+        if(out > 100.0) out = 100.0;
+        if(out < 0.0) out = 0.0;
+        pwm1 = (int)out;
+        Serial.print("PID OUT: ");
+        Serial.println(out);
+        Serial.print("Diff: ");
+        Serial.println(temp-dewpoint);
+      }
+      payload[0] = pwm2 + 100;
+      payload[1] = 0;
+      client.publish(DewChannelReport2_topic.c_str(), payload);
+    }
+  }
+}
+
+void SetPwmOnChannel()
+{
+  int localPwm1 = (int)((double)pwm1 * pwmFactor);
+  int localPwm2 = (int)((double)pwm2 * pwmFactor);
+  
+  if(!ch1OnOff) localPwm1 = 0;
+  analogWrite(CHANNEL1, localPwm1);
+  if(!ch2OnOff) localPwm2 = 0;
+  analogWrite(CHANNEL2, localPwm2); 
+  Serial.print("Set pwm channel 1 to ");
+  Serial.println(localPwm1);
+  Serial.print("Set pwm channel 2 to ");
+  Serial.println(localPwm2);   
+}
+
 void loop() {
   if (!client.connected()) {
+    mqttconnected = false;
     reconnect();
   }
+  
+  if( millis() - timestamp >= 10000)
+  { 
+    // Execute this all 10 seconds    
+    timestamp += 10000; 
+    if(bme280_ch1active)
+      EnvironmentReadout(bmeCh1, Channel1);
+    if(bme280_ch2active)
+      EnvironmentReadout(bmeCh2, Channel2);
+    SetPwmOnChannel();
+  }
+  
   client.loop();
 }
