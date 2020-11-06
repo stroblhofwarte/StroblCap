@@ -2,9 +2,9 @@
 The StroblCap is a simple Dew Cap controller to control two caps.
 The Device is a aimple WEMOS D1 mini WLAN device, connected to
 a MQTT broker and supports eight topics:
-  Astro/StroblCap/ch[1..4] to set the output power between a value of 0-100 (%)
+  Astro/StroblCap/ch[1..2] to set the output power between a value of 0-100 (%)
 and
-  Astro/StroblCap/ch[1..4]/state to report back the power level (also 0-100).
+  Astro/StroblCap/ch[1..2]/state to report back the power level (also 0-100).
 
 The MQTT topics use the power value + 100, the valid range from 0-100(%) is mapped to
 100-200. The payload contains only one single byte.
@@ -43,3 +43,33 @@ Pin D6: PWM for Channel 2
 
 Please be sure to use only 3.3V for powering the BMP280. The WEMOS is not 5V tolerant!
 
+# MQTT
+
+The complete list of MQTT topics:
+
+```
+Astro/StroblCap/ch1           The pwm value for Channel 1, payload 1 byte, 100..200 (value + 100)
+Astro/StroblCap/ch2           The pwm value for Channel 2, payload 1 byte, 100..200 (value + 100)
+Astro/StroblCap/ch1/OnOff     Channel 1 overall on or off, boolen value (1: false, 2: true, e.g. bool + 1)
+Astro/StroblCap/ch2/OnOff     Channel 2 overall on or off, boolen value (1: false, 2: true, e.g. bool + 1)
+Astro/StroblCap/ch1/auto      Indicates if the automatic PI controler should be used or not, bool, see above.
+Astro/StroblCap/ch2/auto      Indicates if the automatic PI controler should be used or not, bool, see above.
+```
+
+This are the report topics. These are used as acknowledgement of the commands above.
+```
+Astro/StroblCap/ch1/state
+Astro/StroblCap/ch2/state
+Astro/StroblCap/ch1/stateOnOff
+Astro/StroblCap/ch2/stateOnOff
+Astro/StroblCap/ch1/stateAuto
+Astro/StroblCap/ch2/stateAuto
+```
+This are the envoronment topic. These topics are used for the EnvironmentPlot-Application (C#, Windows):
+
+```
+Astro/StroblCap/Env/ch[1,2]/Temp      in °C
+Astro/StroblCap/Env/ch[1,2]/Pressure  in hPa
+Astro/StroblCap/Env/ch[1,2]/Humidity  in %
+Astro/StroblCap/Env/ch[1,2]/Dewpoint  in °C
+```
