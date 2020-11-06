@@ -1,5 +1,5 @@
 # StroblCap
-The StroblCap is a simple Dew Cap controller to control four caps.
+The StroblCap is a simple Dew Cap controller to control two caps.
 The Device is a aimple WEMOS D1 mini WLAN device, connected to
 a MQTT broker and supports eight topics:
   Astro/StroblCap/ch[1..4] to set the output power between a value of 0-100 (%)
@@ -27,10 +27,19 @@ SignM2Mqtt.bat file.
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
 
-The hardware for this project based on a WEMOS D1 mini and controls the dew caps with a single 
-MOSFET per channel via pwm. 
 Furthermore the firmware supports two environment sensors (BMP280 only) for each channel. The small 
 BMP280 is mounted inside the dew cap near the optical surface and measure the temperature and the
 humidity. Out of this data the dewpoint is calculated. If the differece between the temperature and
 the dewpoint is less than 5.0 °C, the heater is switched on. The heater is controlled by a simple
 PI controler (in software) to set the power to a value to keep the 5.0 °C difference.
+
+Harware setup:
+```
+Pin D1: SCL (I2C)
+Pin D2: SDA (I2C)
+Pin D5: PWM for Channel 1
+Pin D6: PWM for Channel 2
+```
+
+Please be sure to use only 3.3V for powering the BMP280. The WEMOS is not 5V tolerant!
+
