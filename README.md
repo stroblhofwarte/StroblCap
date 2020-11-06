@@ -1,7 +1,7 @@
 # StroblCap
 The StroblCap is a simple Dew Cap controller to control two caps.
 The Device is a simple WEMOS D1 mini WLAN device, connected to
-a MQTT broker and supports eight topics:
+a MQTT broker and supports topics to control the two dew caps/strips:
   Astro/StroblCap/ch[1..2] to set the output power between a value of 0-100 (%)
 and
   Astro/StroblCap/ch[1..2]/state to report back the power level (also 0-100).
@@ -10,7 +10,7 @@ The MQTT topics use the power value + 100, the valid range from 0-100(%) is mapp
 100-200. The payload contains only one single byte.
 
 For a complete setup a MQTT broker is required in the network setup of the telescope.
-For Win10 the mosquitto broker is a good decision. Please do not forgett to open the
+For Win10 the mosquitto broker is a good decision. Please do not forget to open the
 firewall for the mosquitto process:
 
 ```
