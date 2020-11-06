@@ -26,6 +26,8 @@ is in the Signed3rdParty directory. It is created out of the Nuget M2Mqtt.Net pa
 SignM2Mqtt.bat file.
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
+This package installs also the EnvironmentPlot application to check for a working environment while
+observing stars.
 
 Furthermore the firmware supports two environment sensors (BMP280 only) for each channel. The small 
 BMP280 is mounted inside the dew cap near the optical surface and measure the temperature and the
@@ -73,3 +75,13 @@ Astro/StroblCap/Env/ch[1,2]/Pressure  in hPa
 Astro/StroblCap/Env/ch[1,2]/Humidity  in %
 Astro/StroblCap/Env/ch[1,2]/Dewpoint  in °C
 ```
+# EnvironmentPlot Application
+
+The EnvironmentPlot application catch the MQTT topic for temperature, dewpoint, humidity and the power setting
+for channel 1 and 2. At first startup it is only a small minimized window in the upper left corner. Place this app 
+where you want to have it on the screen and the size you need. This position and size will be stored for the next startup.
+
+![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
+
+Screenshot where the EnvironmentPlot is running in the bottom part of the screen.
+
