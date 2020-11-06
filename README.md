@@ -1,6 +1,6 @@
 # StroblCap
 The StroblCap is a simple Dew Cap controller to control two caps.
-The Device is a aimple WEMOS D1 mini WLAN device, connected to
+The Device is a simple WEMOS D1 mini WLAN device, connected to
 a MQTT broker and supports eight topics:
   Astro/StroblCap/ch[1..2] to set the output power between a value of 0-100 (%)
 and
