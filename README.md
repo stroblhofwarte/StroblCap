@@ -1,3 +1,7 @@
+# Development, ToDo
+- it ist not possible for now to set the mqtt broker in the EnvironmentPlot app
+
+
 # StroblCap
 The StroblCap is a simple Dew Cap controller to control two caps.
 The Device is a simple WEMOS D1 mini WLAN device, connected to
