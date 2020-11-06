@@ -39,7 +39,14 @@ Source: "C:\_develop\StroblCap\StroblCap\bin\Release\M2Mqtt.Net.dll"; DestDir: "
 
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
 Source: "C:\_develop\StroblCap\StroblCap\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
-; TODO: Add other files needed by your driver here (add subfolders above)
+
+Source: "C:\_develop\StroblCap\StroblCap\Icons\water_drop_1.ico"; DestDir: "{app}\EnvironmentPlot"
+Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\Release\EnvironmentPlot.exe"; DestDir: "{app}\EnvironmentPlot"
+Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\Release\EnvironmentPlot.exe.config"; DestDir: "{app}\EnvironmentPlot"
+Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\Release\M2Mqtt.Net.dll"; DestDir: "{app}\EnvironmentPlot"
+
+[Icons]
+Name: "{userdesktop}\EnvironmentPlot"; Filename: "{app}\EnvironmentPlot\EnvironmentPlot.exe"; IconFilename: "{app}\EnvironmentPlot\water_drop_1.ico"
 
 
 ; Only if driver is .NET
