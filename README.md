@@ -43,15 +43,15 @@ The general command format is "cmd:", the response to a command is always postfi
 
 
 ```
-  "ID:"            Sent back the device type id with STROBLCAP#
+  "ID:"            Sent back the device type id with "STROBLCAP#"
   "S1nnn:"         Set power for channel 1 to nnn, where nnn is 000 - 100 [%]
-  "S2nnn:"         Set power for channel 2 to nnn, return 1# when set, otherwise 0#
-  "E1:"            Enable channel 1. 1# if ok
-  "E2:"            Enable channel 2. 1# if ok
+  "S2nnn:"         Set power for channel 2 to nnn, return "1#" when set, otherwise "0#"
+  "E1:"            Enable channel 1. "1#" if ok
+  "E2:"            Enable channel 2. "1#" if ok
   "D1:"            Disable channel 1
   "D2:"            Disable channel 2
-  "A1:"            Set channel 1 to automatic mode. 1# if ok, 0# when no sensor was found for this channel
-  "A2:"            Set channel 2 to automatic mode. 1# if ok, 0# when no sensor for this channel
+  "A1:"            Set channel 1 to automatic mode. "1#" if ok, "0#" when no sensor was found for this channel
+  "A2:"            Set channel 2 to automatic mode. "1#" if ok, "0#" when no sensor for this channel
   "M1:"            Set channel 1 to manual mode
   "M2:"            Set channel 2 to manual mode
   "G1:"            Get sensor data channel 1: "t;h;d;p#", where
@@ -64,8 +64,8 @@ The general command format is "cmd:", the response to a command is always postfi
                              h: Humidity * 100,
                              d: Dewpoint * 100,
                              p: Pressure * 10
-  "P1:"            Get power value channel 1, n#
-  "P2:"            Get power value channel 2, n#
+  "P1:"            Get power value channel 1, "nnn#"
+  "P2:"            Get power value channel 2, "nnn#"
 ```
 
 # EnvironmentPlot Application
