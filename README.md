@@ -55,15 +55,15 @@ The general command format is "cmd:", the response to a command is always postfi
   "M1:"            Set channel 1 to manual mode
   "M2:"            Set channel 2 to manual mode
   "G1:"            Get sensor data channel 1: "t;h;d;p#", where
-                             t: Temperature * 100,
-                             h: Humidity * 100,
-                             d: Dewpoint * 100,
-                             p: Pressure * 10
+                             t: Temperature * 100 [°C],
+                             h: Humidity * 100 [%],
+                             d: Dewpoint * 100 [°C],
+                             p: Pressure * 10 [hPa]
   "G2:"            Get sensor data channel 2: "t;h;d;p#", where
-                             t: Temperature * 100,
-                             h: Humidity * 100,
-                             d: Dewpoint * 100,
-                             p: Pressure * 10
+                             t: Temperature * 100 [°C],
+                             h: Humidity * 100 [%],
+                             d: Dewpoint * 100 [°C],
+                             p: Pressure * 10 [hPa]
   "P1:"            Get power value channel 1, "nnn#"
   "P2:"            Get power value channel 2, "nnn#"
 ```
