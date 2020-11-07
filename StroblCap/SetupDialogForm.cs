@@ -30,7 +30,7 @@ namespace ASCOM.StroblCap
         {
             // Place any validation constraint checks here
             // Update the state variables with results from the dialogue
-            Switch.ipAddress = (string)textBoxIpAddress.Text;
+            Switch.comPort = (string)comboBoxComPort.SelectedItem;
             Switch._names[0] = textBoxName1.Text;
             Switch._names[1] = textBoxName2.Text;
             Switch._names[2] = textBoxName1.Text + " Activation";
@@ -80,7 +80,14 @@ namespace ASCOM.StroblCap
         private void InitUI()
         {
             chkTrace.Checked = tl.Enabled;
-            textBoxIpAddress.Text = Switch.ipAddress;
+            // set the list of com ports to those that are currently available
+            comboBoxComPort.Items.Clear();
+            comboBoxComPort.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());      // use System.IO because it's static
+            // select the current port if possible
+            if (comboBoxComPort.Items.Contains(Switch.comPort))
+            {
+                comboBoxComPort.SelectedItem = Switch.comPort;
+            }
 
             textBoxName1.Text = Switch._names[0];
             textBoxName2.Text = Switch._names[1];

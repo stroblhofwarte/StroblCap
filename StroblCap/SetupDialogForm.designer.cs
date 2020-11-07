@@ -32,7 +32,6 @@ namespace ASCOM.StroblCap
             this.cmdCancel = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.picASCOM = new System.Windows.Forms.PictureBox();
-            this.textBoxIpAddress = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.chkTrace = new System.Windows.Forms.CheckBox();
@@ -47,6 +46,7 @@ namespace ASCOM.StroblCap
             this.label8 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
+            this.comboBoxComPort = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.picASCOM)).BeginInit();
             this.SuspendLayout();
             // 
@@ -100,13 +100,6 @@ namespace ASCOM.StroblCap
             this.picASCOM.Click += new System.EventHandler(this.BrowseToAscom);
             this.picASCOM.DoubleClick += new System.EventHandler(this.BrowseToAscom);
             // 
-            // textBoxIpAddress
-            // 
-            this.textBoxIpAddress.Location = new System.Drawing.Point(205, 114);
-            this.textBoxIpAddress.Name = "textBoxIpAddress";
-            this.textBoxIpAddress.Size = new System.Drawing.Size(198, 20);
-            this.textBoxIpAddress.TabIndex = 8;
-            // 
             // label2
             // 
             this.label2.ForeColor = System.Drawing.Color.Silver;
@@ -122,11 +115,11 @@ namespace ASCOM.StroblCap
             // 
             this.label3.AutoSize = true;
             this.label3.ForeColor = System.Drawing.Color.Silver;
-            this.label3.Location = new System.Drawing.Point(22, 117);
+            this.label3.Location = new System.Drawing.Point(53, 117);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(164, 13);
+            this.label3.Size = new System.Drawing.Size(55, 13);
             this.label3.TabIndex = 10;
-            this.label3.Text = "IP Address of your MQTT Broker:";
+            this.label3.Text = "COM port:";
             // 
             // chkTrace
             // 
@@ -237,12 +230,21 @@ namespace ASCOM.StroblCap
             this.label10.TabIndex = 30;
             this.label10.Text = "Startup value:";
             // 
+            // comboBoxComPort
+            // 
+            this.comboBoxComPort.FormattingEnabled = true;
+            this.comboBoxComPort.Location = new System.Drawing.Point(127, 114);
+            this.comboBoxComPort.Name = "comboBoxComPort";
+            this.comboBoxComPort.Size = new System.Drawing.Size(90, 21);
+            this.comboBoxComPort.TabIndex = 31;
+            // 
             // SetupDialogForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(595, 380);
+            this.Controls.Add(this.comboBoxComPort);
             this.Controls.Add(this.label10);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.label8);
@@ -257,7 +259,6 @@ namespace ASCOM.StroblCap
             this.Controls.Add(this.chkTrace);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.textBoxIpAddress);
             this.Controls.Add(this.picASCOM);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cmdCancel);
@@ -281,7 +282,6 @@ namespace ASCOM.StroblCap
         private System.Windows.Forms.Button cmdCancel;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.PictureBox picASCOM;
-        private System.Windows.Forms.TextBox textBoxIpAddress;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkTrace;
@@ -296,5 +296,6 @@ namespace ASCOM.StroblCap
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.ComboBox comboBoxComPort;
     }
 }

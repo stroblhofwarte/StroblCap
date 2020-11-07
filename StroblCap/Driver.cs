@@ -44,7 +44,6 @@ using ASCOM.Utilities;
 using ASCOM.DeviceInterface;
 using System.Globalization;
 using System.Collections;
-using uPLibrary.Networking.M2Mqtt;
 using System.Threading;
 
 namespace ASCOM.StroblCap
@@ -76,6 +75,16 @@ namespace ASCOM.StroblCap
             analog, dio
         }
 
+        private enum enumSwitch
+        {
+            PowerCh1 = 0,
+            PowerCh2 = 1,
+            OnOffCh1 = 2,
+            OnOffCh2 = 3,
+            AutoCh1 = 4,
+            AutoCh2 = 5
+        }
+
         internal static string driverID = "ASCOM.StroblCap.Switch";
         // TODO Change the descriptive string for your driver then remove this line
         /// <summary>
@@ -85,22 +94,9 @@ namespace ASCOM.StroblCap
 
         internal static string traceStateProfileName = "Trace Level";
         internal static string traceStateDefault = "false";
-        internal static string addressProfileName = "IpAddress"; // Constants used for Profile persistence
-        internal static string addressDefault = "192.168.0.42";
-
-
-        internal static string ipAddress; // Variable to hold the ip address of the StroblCap.
-
-        private MqttClient _client;
-        private string _clientId;
-        private string _subCh1 = "Astro/StroblCap/ch1/state";
-        private string _subCh2 = "Astro/StroblCap/ch2/state";
-        private string _subCh3 = "Astro/StroblCap/ch1/stateOnOff";
-        private string _subCh4 = "Astro/StroblCap/ch2/stateOnOff";
-        private string _subCh5 = "Astro/StroblCap/ch1/stateAuto";
-        private string _subCh6 = "Astro/StroblCap/ch2/stateAuto";
-
-        private string[] _pubCh = { "Astro/StroblCap/ch1", "Astro/StroblCap/ch2", "Astro/StroblCap/ch1/OnOff", "Astro/StroblCap/ch2/OnOff", "Astro/StroblCap/ch1/auto", "Astro/StroblCap/ch2/auto" };
+        internal static string comPortProfileName = "COM Port"; // Constants used for Profile persistence
+        internal static string comPortDefault = "COM1";
+        internal static string comPort; // Variables to hold the current device configuration
 
         internal static string[] _names = { "", "", "", "", "", "" };
         private string[] _namesDefault = {"AnalogSW1", "AnalogSW2", "Channel1OnOff", "Channel1OnOff", "Channel1Auto", "Channel2Auto" };
@@ -136,6 +132,8 @@ namespace ASCOM.StroblCap
         /// Variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
         /// </summary>
         internal TraceLogger tl;
+
+        private ASCOM.Utilities.Serial _serial;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StroblCap"/> class.
@@ -244,6 +242,17 @@ namespace ASCOM.StroblCap
             astroUtilities = null;
         }
 
+
+        private bool CheckForStroblCapDevice()
+        {
+            _serial.Connected = true;
+            _serial.Transmit("ID:");
+            string ret = _serial.ReceiveTerminated("#");
+            _serial.Connected = false;
+            if (ret == "STROBLCAP#")
+                return true;
+            return false;
+        }
         public bool Connected
         {
             get
@@ -259,34 +268,21 @@ namespace ASCOM.StroblCap
 
                 if (value)
                 {
-                    LogMessage("Connected Set", "Connecting to address {0}", ipAddress);
+                    LogMessage("Connected Set", "Connecting to address {0}", comPort);
                     try
                     {
-                        // Handle the MQTT broker connection:
-                        _client = new MqttClient(ipAddress);
+                        LogMessage("Connected Set", "Connecting to port {0}", comPort);
+                        _serial = new ASCOM.Utilities.Serial();
+                        _serial.PortName = comPort;
+                        _serial.StopBits = SerialStopBits.One;
+                        _serial.Parity = SerialParity.None;
+                        _serial.Speed = SerialSpeed.ps115200;
+                        _serial.DTREnable = false;
 
-                        // register a callback-function (we have to implement, see below) which is called by the library when a message was received
-                        _client.MqttMsgPublishReceived += _client_MqttMsgPublishReceived;
-
-                        // use a unique id as client id, each time we start the application
-                        _clientId = Guid.NewGuid().ToString();
-                        _client.Connect(_clientId);
-                        // Subcribe to the chennels with QoS 1
-                        _client.Subscribe(new string[] { _subCh1, _subCh2, _subCh3, _subCh4, _subCh5, _subCh6 }, new byte[] { 1, 1, 1, 1, 1, 1 });
-                        connectedState = true;
-                        for (int i = 0; i < numSwitch; i++)
-                        {
-                            byte[] payload = new byte[1];
-                            if(_switchTypes[i] == enumSwitchType.analog)
-                                payload[0] = ((byte)(int.Parse(_swValues[i]) + 100.0));
-                            if (_switchTypes[i] == enumSwitchType.dio)
-                            {
-                                payload[0] = 1;
-                                if (bool.Parse(_swValues[i]))
-                                    payload[0] = 2;
-                            }
-                            _client.Publish(_pubCh[i], payload, 1, true);
-                        }
+                        if (CheckForStroblCapDevice())
+                            connectedState = true;
+                        else
+                            connectedState = false;
                     }
                     catch (Exception ex)
                     {
@@ -295,61 +291,9 @@ namespace ASCOM.StroblCap
                 }
                 else
                 {
-                    if(connectedState)
-                    {
-                        _client.Disconnect();
-                    }
                     connectedState = false;
-                    LogMessage("Connected Set", "Disconnecting from adress {0}", ipAddress);
-                    // TODO disconnect from the device
+                    LogMessage("Connected Set", "Disconnecting from adress {0}", comPort);
                 }
-            }
-        }
-
-        private void _client_MqttMsgPublishReceived(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishEventArgs e)
-        {
-            try
-            {
-                if (e.Topic == _subCh1)
-                {
-                    _swValues[0] = ((double)e.Message[0] -100.0).ToString();
-                }
-                if (e.Topic == _subCh2)
-                {
-                    _swValues[1] = ((double)e.Message[0] - 100.0).ToString();
-                }
-                if (e.Topic == _subCh3)
-                {
-                    if (e.Message[0] == 2)
-                        _swValues[2] = "true";
-                    else
-                        _swValues[2] = "false";
-                }
-                if (e.Topic == _subCh4)
-                {
-                    if (e.Message[0] == 2)
-                        _swValues[3] = "true";
-                    else
-                        _swValues[3] = "false";
-                }
-                if (e.Topic == _subCh5)
-                {
-                    if (e.Message[0] == 2)
-                        _swValues[4] = "true";
-                    else
-                        _swValues[4] = "false";
-                }
-                if (e.Topic == _subCh6)
-                {
-                    if (e.Message[0] == 2)
-                        _swValues[5] = "true";
-                    else
-                        _swValues[5] = "false";
-                }
-            }
-            catch (Exception ex)
-            {
-                tl.LogMessage("MQTT subscription: ", ex.ToString()) ;
             }
         }
 
@@ -518,11 +462,33 @@ namespace ASCOM.StroblCap
             }
             if (_switchTypes[id] == enumSwitchType.analog)
                 throw new MethodNotImplementedException("SetSwitch");
-            byte[] payload = new byte[1];
-            payload[0] = 1;
-            if (state)
-                payload[0] = 2;
-            _client.Publish(_pubCh[id], payload, 1, true);
+            SetBooleanSwitch(state, (enumSwitch)id);
+        }
+
+        void SetBooleanSwitch(bool val, enumSwitch sw)
+        {
+            _serial.Connected = true;
+            String cmd = String.Empty;
+            if (val && sw == enumSwitch.OnOffCh1) cmd = "E1:";
+            if (val && sw == enumSwitch.OnOffCh2) cmd = "E2:";
+            if (!val && sw == enumSwitch.OnOffCh1) cmd = "D1:";
+            if (!val && sw == enumSwitch.OnOffCh2) cmd = "D2:";
+
+            if (val && sw == enumSwitch.AutoCh1) cmd = "A1:";
+            if (val && sw == enumSwitch.AutoCh2) cmd = "A2:";
+            if (!val && sw == enumSwitch.AutoCh1) cmd = "M1:";
+            if (!val && sw == enumSwitch.AutoCh2) cmd = "M2:";
+
+            _serial.Transmit(cmd);
+            String ret = _serial.ReceiveTerminated("#");
+            if(ret == "1#")
+            {
+                if (val)
+                    _swValues[(int)sw] = "true";
+                else
+                    _swValues[(int)sw] = "false";
+            }
+            _serial.Connected = false;
         }
 
         #endregion
@@ -602,11 +568,34 @@ namespace ASCOM.StroblCap
             if (_switchTypes[id] == enumSwitchType.dio)
                 throw new MethodNotImplementedException("SetSwitchValue");
 
-            byte[] payload = new byte[1];
-            payload[0] = ((byte)(value+100.0));
-            _client.Publish(_pubCh[id], payload, 1, true);
-            // The _swValues variable is set in the subcriber section of the MQTTclient!
+            SetAnalogSwitch(value, (enumSwitch)id);
         }
+
+        void SetAnalogSwitch(double val, enumSwitch sw)
+        {
+            _serial.Connected = true;
+            String cmd = String.Empty;
+
+            int intVal = (int)val;
+
+            if(sw == enumSwitch.PowerCh1)
+            {
+                cmd = "S1" + intVal.ToString("D3") + ":";
+            }
+            if (sw == enumSwitch.PowerCh2)
+            {
+                cmd = "S2" + intVal.ToString("D3") + ":";
+            }
+
+            _serial.Transmit(cmd);
+            String ret = _serial.ReceiveTerminated("#");
+            if (ret == "1#")
+            {
+                _swValues[(int)sw] = val.ToString(CultureInfo.InvariantCulture);
+            }
+            _serial.Connected = false;
+        }
+
 
         #endregion
         #endregion
@@ -777,8 +766,8 @@ namespace ASCOM.StroblCap
             {
                 driverProfile.DeviceType = "Switch";
                 tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(driverID, traceStateProfileName, string.Empty, traceStateDefault));
-                ipAddress = driverProfile.GetValue(driverID, addressProfileName, string.Empty, addressDefault);
-                for(int i = 0; i < numSwitch; i++)
+                comPort = driverProfile.GetValue(driverID, comPortProfileName, string.Empty, comPortDefault);
+                for (int i = 0; i < numSwitch; i++)
                     _names[i] = driverProfile.GetValue(driverID, _nameKeys[i], string.Empty, _namesDefault[i]);
                 for (int i = 0; i < numSwitch; i++)
                     _namesDesc[i] = driverProfile.GetValue(driverID, _nameDescKeys[i], string.Empty, _namesDescDefault[i]);
@@ -796,7 +785,7 @@ namespace ASCOM.StroblCap
             {
                 driverProfile.DeviceType = "Switch";
                 driverProfile.WriteValue(driverID, traceStateProfileName, tl.Enabled.ToString());
-                driverProfile.WriteValue(driverID, addressProfileName, ipAddress);
+                driverProfile.WriteValue(driverID, comPortProfileName, comPort.ToString());
                 for (int i = 0; i < numSwitch; i++)
                     driverProfile.WriteValue(driverID, _nameKeys[i], _names[i]);
                 for (int i = 0; i < numSwitch; i++)
@@ -818,5 +807,11 @@ namespace ASCOM.StroblCap
             tl.LogMessage(identifier, msg);
         }
         #endregion
+
+        #region CommandImpl
+
+
+        #endregion
+
     }
 }

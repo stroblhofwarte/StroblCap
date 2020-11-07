@@ -28,8 +28,10 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
@@ -56,27 +58,37 @@ namespace EnvironmentPlot
         private double _maxXinDiagram = 600.0;
         private int _errorCounter = 0;
         #endregion
+
+        private SerialPort _serial;
+        private string _myPort;
+
+
         public Plotter()
         {
             InitializeComponent();
-            _client = new MqttClient("192.168.42.32");
+            String[] ports = SerialPort.GetPortNames();
+            foreach (string port in ports)
+                comboBoxPort.Items.Add(port);
+            _myPort = Properties.Settings.Default.Port;
+            if (comboBoxPort.Items.Contains(_myPort))
+            {
+                comboBoxPort.SelectedItem = _myPort;
+            }
+            if (_myPort == String.Empty)
+                _myPort = "COM1";
+            _serial = new SerialPort(_myPort, 115200, Parity.None, 8, StopBits.One);
 
-            // register a callback-function (we have to implement, see below) which is called by the library when a message was received
-            _client.MqttMsgPublishReceived += _client_MqttMsgPublishReceived;
+        }
 
-            // use a unique id as client id, each time we start the application
-            String clientId = Guid.NewGuid().ToString();
-            _client.Connect(clientId);
-            // Subcribe to the chennels with QoS 1
-            String[] topics = { "Astro/StroblCap/Env/ch1/Temp",
-                                "Astro/StroblCap/Env/ch1/Dewpoint",
-                                "Astro/StroblCap/Env/ch1/Humidity",
-                                "Astro/StroblCap/ch1/state",
-                                "Astro/StroblCap/Env/ch2/Temp",
-                                "Astro/StroblCap/Env/ch2/Dewpoint",
-                                "Astro/StroblCap/Env/ch2/Humidity",
-                                "Astro/StroblCap/ch2/state"};
-            _client.Subscribe(topics, new byte[] { 1, 1, 1, 1, 1, 1, 1, 1});
+        private void comboBoxPort_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string comport = comboBoxPort.Text;
+            if(_myPort != comport)
+            {
+                _myPort = comport;
+                Properties.Settings.Default.Port = _myPort;
+                _serial = new SerialPort(_myPort, 115200, Parity.None, 8, StopBits.One);
+            }
         }
 
         private double ScrapSerie(Chart widget, enumChart chart, double xValue)
@@ -189,8 +201,6 @@ namespace EnvironmentPlot
 
         private void Plotter_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _client.MqttMsgPublishReceived -= _client_MqttMsgPublishReceived;
-            _client.Disconnect();
             
             if (WindowState == FormWindowState.Maximized)
             {
@@ -298,5 +308,129 @@ namespace EnvironmentPlot
                 chartChannel2.Series[(int)enumChart.Power].Points.Clear();
             }
         }
+
+        private void timerDataRead_Tick(object sender, EventArgs e)
+        {
+            string channel1 = Communicate("G1:");
+            string channel2 = Communicate("G2:");
+            string power1 = Communicate("P1:");
+            string power2 = Communicate("P2:");
+            int pwm1 = int.Parse(power1);
+            int pwm2 = int.Parse(power2);
+
+
+            if (channel1 != String.Empty)
+            {
+                double temp, hum, dew, pres;
+                if (ParseSensor(channel1, out temp, out hum, out dew, out pres))
+                {
+                    if (temp != 0.0 || hum != 0.0 || dew != 0.0 || pres != 0.0)
+                    {
+                        _xCh1 = ScrapSerie(chartChannel1, enumChart.Temperature, _xCh1);
+                        _xCh1 = AddPoint(chartChannel1, enumChart.Temperature, _xCh1, temp);
+
+                        if (checkBoxHumidityChannel1.Checked)
+                        {
+                            AddPoint(chartChannel1, enumChart.Humidity, _xCh1, hum);
+                            ScrapSerie(chartChannel1, enumChart.Humidity, _xCh1);
+                        }
+
+                        AddPoint(chartChannel1, enumChart.Dewpoint, _xCh1, dew);
+                        ScrapSerie(chartChannel1, enumChart.Dewpoint, _xCh1);
+                    }
+                    if (checkBoxPowerCh1.Checked)
+                    {
+                        double val = (double)pwm1;
+                        AddPoint(chartChannel1, enumChart.Power, _xCh1, val);
+                        ScrapSerie(chartChannel1, enumChart.Power, _xCh1);
+                    }
+                }
+            }
+            if (channel2 != String.Empty)
+            {
+                double temp, hum, dew, pres;
+                if (ParseSensor(channel2, out temp, out hum, out dew, out pres))
+                {
+                    if (temp != 0.0 || hum != 0.0 || dew != 0.0 || pres != 0.0)
+                    {
+                        _xCh2 = ScrapSerie(chartChannel2, enumChart.Temperature, _xCh2);
+                        _xCh2 = AddPoint(chartChannel2, enumChart.Temperature, _xCh2, temp);
+
+                        if (checkBoxHumidityChannel2.Checked)
+                        {
+                            AddPoint(chartChannel2, enumChart.Humidity, _xCh2, hum);
+                            ScrapSerie(chartChannel2, enumChart.Humidity, _xCh2);
+                        }
+
+                        AddPoint(chartChannel2, enumChart.Dewpoint, _xCh2, dew);
+                        ScrapSerie(chartChannel2, enumChart.Dewpoint, _xCh1);
+                    }
+                    if (checkBoxPowerCh2.Checked)
+                    {
+                        double val = (double)pwm2;
+                        AddPoint(chartChannel2, enumChart.Power, _xCh2, val);
+                        ScrapSerie(chartChannel2, enumChart.Power, _xCh2);
+                    }
+                }
+            }
+        }
+
+        private bool ParseSensor(string str, out double temp, out double hum, out double dew, out double pre)
+        {
+            String[] fields = str.Split(';');
+            temp = hum = dew = pre = 0.0;
+            if (fields.Count() != 4) return false;
+            temp = (double)((int.Parse(fields[0]) / 100.0));
+            hum = (double)((int.Parse(fields[1]) / 100.0));
+            dew = (double)((int.Parse(fields[2]) / 100.0));
+            pre = (double)((int.Parse(fields[3]) / 10.0));
+            return true;
+        }
+
+        private string Communicate(string cmd)
+        {
+            string ret = String.Empty;
+            int timeout = 500;
+            while (true)
+            {
+                try
+                {
+                    _serial.Open();
+                    _serial.Write(cmd);
+                    while(timeout >0 )
+                    {
+                        if(_serial.BytesToRead > 0)
+                        {
+                            ret += _serial.ReadExisting();
+                            if (ret.Contains("#"))
+                                break;
+                        }
+                        Thread.Sleep(1);
+                        timeout--;
+                    }
+                    _serial.Close();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    // Port in use (by ASCOM driver)
+                    _serial.Close();
+                    Thread.Sleep(100);
+                    continue;
+                }
+            }
+            // Remove all chars other than 0-9 and ;
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in ret)
+            {
+                if ((c >= '0' && c <= '9') || c == ';')
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
+        }
+
+        
     }
 }
