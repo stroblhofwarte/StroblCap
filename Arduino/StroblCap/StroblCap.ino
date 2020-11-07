@@ -50,6 +50,7 @@
  * P2:            Get power value channel 2, nnn#
  */
 
+#include <ESP8266WiFi.h>
 #include <pins_arduino.h>
 //needed for library
 #include <stdlib.h>
@@ -88,6 +89,7 @@ String serialData;
 String serBuf;
 
 void setup() {
+  WiFi.forceSleepBegin();
   // put your setup code here, to run once:
   Serial.begin(115200);
   pinMode(CHANNEL1,OUTPUT);
@@ -339,7 +341,7 @@ void process(String data)
   if(data == "ID:") Greeting();
   else if(data.startsWith("S1")) Cmd_S(data, 1);
   else if(data.startsWith("S2")) Cmd_S(data, 2);
-  else if(data == "E1:") Cmd_ED(1,true);
+  else if(data == "E1:") Cmd_ED(1, true);
   else if(data == "E2:") Cmd_ED(2, true);
   else if(data == "D1:") Cmd_ED(1, false);
   else if(data == "D2:") Cmd_ED(2, false);
