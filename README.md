@@ -38,6 +38,36 @@ Pin D6: PWM for Channel 2
 
 Please be sure to use only 3.3V for powering the BMP280. The WEMOS is not 5V tolerant!
 
+The firmware supports following commands via serial communication line (without CR, LineFeed etc.). 
+The general command format is "cmd:", the response to a command is always postfixed with a #.
+
+
+```
+  "ID:"            Sent back the device type id with STROBLCAP#
+  "S1nnn:"         Set power for channel 1 to nnn, where nnn is 000 - 100 [%]
+  "S2nnn:"         Set power for channel 2 to nnn, return 1# when set, otherwise 0#
+  "E1:"            Enable channel 1. 1# if ok
+  "E2:"            Enable channel 2. 1# if ok
+  "D1:"            Disable channel 1
+  "D2:"            Disable channel 2
+  "A1:"            Set channel 1 to automatic mode. 1# if ok, 0# when no sensor was found for this channel
+  "A2:"            Set channel 2 to automatic mode. 1# if ok, 0# when no sensor for this channel
+  "M1:"            Set channel 1 to manual mode
+  "M2:"            Set channel 2 to manual mode
+  "G1:"            Get sensor data channel 1: "t;h;d;p#", where
+                             t: Temperature * 100,
+                             h: Humidity * 100,
+                             d: Dewpoint * 100,
+                             p: Pressure * 10
+  "G2:"            Get sensor data channel 2: "t;h;d;p#", where
+                             t: Temperature * 100,
+                             h: Humidity * 100,
+                             d: Dewpoint * 100,
+                             p: Pressure * 10
+  "P1:"            Get power value channel 1, n#
+  "P2:"            Get power value channel 2, n#
+```
+
 # EnvironmentPlot Application
 
 The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
