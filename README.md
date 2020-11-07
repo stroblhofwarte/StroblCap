@@ -26,6 +26,7 @@ BMP280 is mounted inside the dew cap near the optical surface and measure the te
 humidity. Out of this data the dewpoint is calculated. If the differece between the temperature and
 the dewpoint is less than 5.0 °C, the heater is switched on. The heater is controlled by a simple
 PI controler (in software) to set the power to a value to keep the 5.0 °C difference.
+The firmware is written in the arduino development environment.
 
 Harware setup:
 ```
