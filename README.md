@@ -77,6 +77,6 @@ This position and size will be stored for the next startup. Do not forgett to se
 
 ![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
 
-Screenshot where the EnvironmentPlot is running on the bottom part of the screen. A BME280 sensor is connected only for channel 1, the second channel send always zero for all values because there is no sensor. The app will not show this values! The N.I.N.A application is running in parallel to control the settings 
+Screenshot where the EnvironmentPlot is running on the bottom part of the screen. A BME280 sensor is connected only for channel 1, the second channel send always zero for all values because there is no sensor. The app will not show this values! The N.I.N.A. application is running in parallel to control the settings 
 of the StroblCap device.
 
