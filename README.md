@@ -1,39 +1,27 @@
-# Development, ToDo
-- it ist not possible for now to set the mqtt broker in the EnvironmentPlot app
-
 
 # StroblCap
 The StroblCap is a simple Dew Cap controller to control two caps.
-The Device is a simple WEMOS D1 mini WLAN device, connected to
-a MQTT broker and supports topics to control the two dew caps/strips:
-  Astro/StroblCap/ch[1..2] to set the output power between a value of 0-100 (%)
-and
-  Astro/StroblCap/ch[1..2]/state to report back the power level (also 0-100).
+The Device is a simple WEMOS D1 mini WLAN device. The communication is done 
+via the COM port.
+This device behaves like a switch device. Each output channel could be set to
+a power output between 0 and 100%. Each channel can be equipped with a BME280
+environment sensor for a automatic dew control. Each channel can be switched on and 
+off without changing the power settings. Each channel can be switched to the automatic
+dew control or not.
 
-The MQTT topics use the power value + 100, the valid range from 0-100(%) is mapped to
-100-200. The payload contains only one single byte.
-
-For a complete setup a MQTT broker is required in the network setup of the telescope.
-For Win10 the mosquitto broker is a good decision. Please do not forget to open the
-firewall for the mosquitto process:
-
-```
------------------         ----------------         -----------------      ----------------
-|               |         |              |         |               |      |              |
-| StroblCap     |---------| MQTT Broker  |---------| ASCOM Driver  |------| ASCOM Client |
-| WEMOS D1 mini |         | Port 1883    |         |               |      | N.I.N.A.     |
------------------         ----------------         -----------------      ----------------
-```
-The ASCOM driver is compiled with Visual Studio 2019 Communitiy. It requires the M2Mqtt.Net 
-dll in a signed version, otherwise ASCOM will not load the driver. The signed M2Mqtt.Net.dll 
-is in the Signed3rdParty directory. It is created out of the Nuget M2Mqtt.Net package via the 
-SignM2Mqtt.bat file.
+The ASCOM driver is compiled with Visual Studio 2019 Communitiy. The ASCOM driver does not
+block the COM device, the COM port is in use only when new switch settings are send
+from the ASCOM driver to the device. This allows to run a environment plot application (EnvironmentPlot.exe) 
+in parallel to observe the measurement values of the BME280 sensors. Furthermore the power 
+settings via ASCOM driver or from the automatic dew control can be observed.
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
 This package installs also the EnvironmentPlot application to check for a working environment while
 observing stars.
 
-Furthermore the firmware supports two environment sensors (BMP280 only) for each channel. The small 
+#Firmware
+
+The firmware supports two environment sensors (BMP280 only) for each channel. The small 
 BMP280 is mounted inside the dew cap near the optical surface and measure the temperature and the
 humidity. Out of this data the dewpoint is calculated. If the differece between the temperature and
 the dewpoint is less than 5.0 °C, the heater is switched on. The heater is controlled by a simple
@@ -49,41 +37,12 @@ Pin D6: PWM for Channel 2
 
 Please be sure to use only 3.3V for powering the BMP280. The WEMOS is not 5V tolerant!
 
-# MQTT
-
-The complete list of MQTT topics:
-
-```
-Astro/StroblCap/ch1           The pwm value for Channel 1, payload 1 byte, 100..200 (value + 100)
-Astro/StroblCap/ch2           The pwm value for Channel 2, payload 1 byte, 100..200 (value + 100)
-Astro/StroblCap/ch1/OnOff     Channel 1 overall on or off, boolen value (1: false, 2: true, e.g. bool + 1)
-Astro/StroblCap/ch2/OnOff     Channel 2 overall on or off, boolen value (1: false, 2: true, e.g. bool + 1)
-Astro/StroblCap/ch1/auto      Indicates if the automatic PI controler should be used or not, bool, see above.
-Astro/StroblCap/ch2/auto      Indicates if the automatic PI controler should be used or not, bool, see above.
-```
-
-This are the report topics. These are used as acknowledgement of the commands above.
-```
-Astro/StroblCap/ch1/state
-Astro/StroblCap/ch2/state
-Astro/StroblCap/ch1/stateOnOff
-Astro/StroblCap/ch2/stateOnOff
-Astro/StroblCap/ch1/stateAuto
-Astro/StroblCap/ch2/stateAuto
-```
-This are the envoronment topic. These topics are used for the EnvironmentPlot-Application (C#, Windows):
-
-```
-Astro/StroblCap/Env/ch[1,2]/Temp      in °C
-Astro/StroblCap/Env/ch[1,2]/Pressure  in hPa
-Astro/StroblCap/Env/ch[1,2]/Humidity  in %
-Astro/StroblCap/Env/ch[1,2]/Dewpoint  in °C
-```
 # EnvironmentPlot Application
 
-The EnvironmentPlot application catch the MQTT topic for temperature, dewpoint, humidity and the power setting
-for channel 1 and 2. At first startup it is only a small minimized window in the upper left corner. Place this app 
-where you want to have it on the screen and the size you need. This position and size will be stored for the next startup.
+The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
+dewpoint, humidity and the power setting for channel 1 and 2. At first startup it is only a small minimized window in 
+the upper left corner. Place this app where you want to have it on the screen and the size you need. 
+This position and size will be stored for the next startup. Do not forgett to set the COM port of the StroblCap device!
 
 ![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
 
