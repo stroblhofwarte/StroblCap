@@ -32,8 +32,8 @@
  * E2:            Enable channel 2. 1# if ok.
  * D1:            Disable channel 1
  * D2:            Disable channel 2
- * A1:            Set channel 1 to automatic mode. 1# if ok, 0# when no sensor was found for this channel.
- * A2:            Set channel 2 to automatic mode. 1# if ok, 0# when no sensor.
+ * A1:            Set channel 1 to automatic mode. 1# 
+ * A2:            Set channel 2 to automatic mode. 1# 
  * M1:            Set channel 1 to manual mode.
  * M2:            Set channel 2 to manual mode.
  * G1:            Get sensor data channel 1: "t;h;d;p#", where
@@ -75,12 +75,12 @@ const String Channel1 = "ch1";
 const String Channel2 = "ch2";
 
 
-int pwm1;
-int pwm2;
-int ch1OnOff;
-int ch2OnOff;
-int ch1Auto;
-int ch2Auto;
+int pwm1 = 100.0;
+int pwm2 = 100.0;
+int ch1OnOff = 1;
+int ch2OnOff = 1;
+int ch1Auto = 0;
+int ch2Auto = 0;
 
 unsigned long timestamp;
 
@@ -92,6 +92,7 @@ void setup() {
   WiFi.forceSleepBegin();
   // put your setup code here, to run once:
   Serial.begin(115200);
+  analogWriteFreq(1000);
   pinMode(CHANNEL1,OUTPUT);
   pinMode(CHANNEL2,OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -105,10 +106,12 @@ void setup() {
   if (bmeCh1.begin(bme280_ch1addr, &Wire))
   {
     bme280_ch1active = true;
+    ch1Auto = 1;
   }
   if (bmeCh2.begin(bme280_ch2addr, &Wire))
   {
     bme280_ch2active = true;
+    ch2Auto = 1;
   }
 
     
@@ -173,6 +176,8 @@ double outICh2 = 0.0;
 
 double PID(double soll, double ist, double Kp, double Ki, double *outI)
 {
+  // To avoid unwanted behavior, make sure the "ist" value will never be negative.
+  if(ist < 0) ist = 0;
   double outP = (soll - ist ) * Kp;
   *outI += (soll - ist) * Ki;   // Ki = 0,2
   if(*outI < 0.0) *outI = 0.0;
