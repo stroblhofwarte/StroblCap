@@ -177,7 +177,7 @@ double outICh2 = 0.0;
 double PID(double soll, double ist, double Kp, double Ki, double *outI)
 {
   // To avoid unwanted behavior, make sure the "ist" value will never be negative.
-  if(ist < 0) ist = 0;
+  //if(ist < 0) ist = 0;
   double outP = (soll - ist ) * Kp;
   *outI += (soll - ist) * Ki;   // Ki = 0,2
   if(*outI < 0.0) *outI = 0.0;
@@ -200,7 +200,8 @@ void SetPower(String ch, double temp, double dewpoint)
       {
         double out = PID(dewPointDiff, temp-dewpoint, KpCh1, KiCh1, &outICh1);
         if(out > 100.0) out = 100.0;
-        if(out < 0.0) out = 0.0;
+        if(out < 0.0) out = -out;
+        if(out < -100.0) out = 100.0;
         pwm1 = (int)out;
       }
     }
@@ -219,8 +220,9 @@ void SetPower(String ch, double temp, double dewpoint)
       {
         double out = PID(dewPointDiff, temp-dewpoint, KpCh2, KiCh2, &outICh2);
         if(out > 100.0) out = 100.0;
-        if(out < 0.0) out = 0.0;
-        pwm1 = (int)out;
+        if(out < 0.0) out = -out;
+        if(out < -100.0) out = 100.0;
+        pwm2 = (int)out;
       }
     }
   }
