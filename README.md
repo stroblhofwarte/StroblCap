@@ -1,6 +1,6 @@
 
 # StroblCap
-The StroblCap is a simple Dew Cap controller to control two caps.
+The StroblCap is a simple Dew Cap controller for controling two caps.
 The Device is a simple WEMOS D1 mini WLAN device. The communication is done 
 via the COM port.
 This device behaves like a switch device. Each output channel could be set to
@@ -9,15 +9,11 @@ environment sensor for a automatic dew control. Each channel can be switched on 
 off without changing the power settings. Each channel can be switched to the automatic
 dew control or not.
 
-The ASCOM driver is compiled with Visual Studio 2019 Communitiy. The ASCOM driver does not
-block the COM device, the COM port is in use only when new switch settings are send
-from the ASCOM driver to the device. This allows to run a environment plot application (EnvironmentPlot.exe) 
-in parallel to observe the measurement values of the BME280 sensors. Furthermore the power 
-settings via ASCOM driver or from the automatic dew control can be observed.
+The ASCOM driver is compiled with Visual Studio 2019 Communitiy. 
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
-This package installs also the EnvironmentPlot application to check for a working environment while
-observing stars.
+
+(18.01.2021) Bug: The automatic dew control is not running yet.
 
 # Firmware
 
@@ -69,6 +65,8 @@ The general command format is "cmd:", the response to a command is always postfi
 ```
 
 # EnvironmentPlot Application
+
+DEPRICATED: The environment values are now in the ASCOM client!
 
 The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
 dewpoint, humidity and the power setting for channel 1 and 2. At first startup it is only a small minimized window in 
