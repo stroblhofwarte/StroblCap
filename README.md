@@ -19,6 +19,8 @@ settings via ASCOM driver or from the automatic dew control can be observed.
 This package installs also the EnvironmentPlot application to check for a working environment while
 observing stars.
 
+(18.01.2021) Bug: The automatic dew control is not running yet.
+
 # Firmware
 
 The firmware supports two environment sensors (BMP280 only) for each channel. The small 
