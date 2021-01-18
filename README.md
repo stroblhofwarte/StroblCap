@@ -9,15 +9,9 @@ environment sensor for a automatic dew control. Each channel can be switched on 
 off without changing the power settings. Each channel can be switched to the automatic
 dew control or not.
 
-The ASCOM driver is compiled with Visual Studio 2019 Communitiy. The ASCOM driver does not
-block the COM device, the COM port is in use only when new switch settings are send
-from the ASCOM driver to the device. This allows to run a environment plot application (EnvironmentPlot.exe) 
-in parallel to observe the measurement values of the BME280 sensors. Furthermore the power 
-settings via ASCOM driver or from the automatic dew control can be observed.
+The ASCOM driver is compiled with Visual Studio 2019 Communitiy. 
 
 'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
-This package installs also the EnvironmentPlot application to check for a working environment while
-observing stars.
 
 (18.01.2021) Bug: The automatic dew control is not running yet.
 
