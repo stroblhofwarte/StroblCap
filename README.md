@@ -69,7 +69,8 @@ The general command format is "cmd:", the response to a command is always postfi
 ```
 
 # EnvironmentPlot Application
-<DEPRICATED> The environment values are now in the ASCOM client!
+
+DEPRICATED: The environment values are now in the ASCOM client!
 
 The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
 dewpoint, humidity and the power setting for channel 1 and 2. At first startup it is only a small minimized window in 
