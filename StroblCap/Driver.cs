@@ -45,6 +45,7 @@ using ASCOM.DeviceInterface;
 using System.Globalization;
 using System.Collections;
 using System.Threading;
+using static ASCOM.StroblCap.Switch;
 
 namespace ASCOM.StroblCap
 {
@@ -61,7 +62,7 @@ namespace ASCOM.StroblCap
     /// </summary>
     [Guid("8405433a-edcf-4c74-bd39-62972541afe4")]
     [ClassInterface(ClassInterfaceType.None)]
-    public class Switch : ISwitchV2
+    public class SwitchObj : ISwitchV2
     {
         /// <summary>
         /// ASCOM DeviceID (COM ProgID) for this driver.
@@ -70,20 +71,6 @@ namespace ASCOM.StroblCap
         /// 
          #region Properties
 
-        private enum enumSwitchType
-        {
-            analog, dio
-        }
-
-        private enum enumSwitch
-        {
-            PowerCh1 = 0,
-            PowerCh2 = 1,
-            OnOffCh1 = 2,
-            OnOffCh2 = 3,
-            AutoCh1 = 4,
-            AutoCh2 = 5
-        }
 
         internal static string driverID = "ASCOM.StroblCap.Switch";
         // TODO Change the descriptive string for your driver then remove this line
@@ -96,21 +83,12 @@ namespace ASCOM.StroblCap
         internal static string traceStateDefault = "false";
         internal static string comPortProfileName = "COM Port"; // Constants used for Profile persistence
         internal static string comPortDefault = "COM1";
-        internal static string comPort; // Variables to hold the current device configuration
+        private Switches _switches;
+        public Switches Switches { get { return _switches; } }
 
-        internal static string[] _names = { "", "", "", "", "", "" };
-        private string[] _namesDefault = {"AnalogSW1", "AnalogSW2", "Channel1OnOff", "Channel1OnOff", "Channel1Auto", "Channel2Auto" };
-        private string[] _nameKeys = { "sw1", "sw2", "sw3", "sw4", "sw5", "sw6" };
+        private static System.Timers.Timer _readbackTimer;
 
-        internal static string[] _namesDesc = { "", "", "", "", "", "" };
-        private string[] _namesDescDefault = { "Channel 1 power, 1-100%", "Channel 2 power, 1-100%", "Channel 1 activation", "Channel 2 activation", "Channel 1 auto mode using environmental sensor", "Channel 2 auto mode using environmental sensor" };
-        private string[] _nameDescKeys = { "swDesc1", "swDesc2", "swDesc3", "swDesc4", "swDesc5", "swDesc6" };
-
-        internal static string[] _swValues = { "50.0", "50.0", "true", "true", "true", "true" };
-        private string[] _valuesDefault = { "50", "50", "true", "true", "true", "true" };
-        private string[] _valuesKeys = { "startup1", "startup2", "startup3", "startup4", "startup5", "startup6" };
-        private enumSwitchType[] _switchTypes = { enumSwitchType.analog, enumSwitchType.analog, enumSwitchType.dio, enumSwitchType.dio, enumSwitchType.dio, enumSwitchType.dio };
-
+        private object _lock = new object();
         #endregion
 
         /// <summary>
@@ -131,7 +109,9 @@ namespace ASCOM.StroblCap
         /// <summary>
         /// Variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
         /// </summary>
-        internal TraceLogger tl;
+        private TraceLogger tl;
+
+        public TraceLogger Logger { get{ return tl; } }
 
         private ASCOM.Utilities.Serial _serial;
 
@@ -139,10 +119,11 @@ namespace ASCOM.StroblCap
         /// Initializes a new instance of the <see cref="StroblCap"/> class.
         /// Must be public for COM registration.
         /// </summary>
-        public Switch()
+        public SwitchObj()
         {
             tl = new TraceLogger("", "StroblCap");
-            ReadProfile(); // Read device configuration from the ASCOM Profile store
+            _switches = new Switches(tl);
+            _switches.Load();
 
             tl.LogMessage("Switch", "Starting initialisation");
 
@@ -150,8 +131,45 @@ namespace ASCOM.StroblCap
             utilities = new Util(); //Initialise util object
             astroUtilities = new AstroUtils(); // Initialise astro-utilities object
 
+            // Startup the readback timer, where all settings from the hardware is readed:
+            _readbackTimer = new System.Timers.Timer(10000);
+            // Hook up the Elapsed event for the timer. 
+            _readbackTimer.Elapsed += _readbackTimer_Elapsed;
+            _readbackTimer.AutoReset = true;
+            _readbackTimer.Enabled = true;
 
             tl.LogMessage("Switch", "Completed initialisation");
+        }
+
+        private void _readbackTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (!connectedState) return;
+            lock(_lock)
+            {
+                _serial.Transmit("G1:");
+                String ret = _serial.ReceiveTerminated("#");
+                String[] values = ret.Split(';');
+                _switches.Get((int)Switches.enumSwitch.TempCh1).Value = (Int32.Parse(values[0]) / 100).ToString();
+                _switches.Get((int)Switches.enumSwitch.HumCh1).Value = (Int32.Parse(values[1]) / 100).ToString();
+                _switches.Get((int)Switches.enumSwitch.DewCh1).Value = (Int32.Parse(values[2]) / 100).ToString();
+
+                _serial.Transmit("G2:");
+                ret = _serial.ReceiveTerminated("#");
+                values = ret.Split(';');
+                _switches.Get((int)Switches.enumSwitch.TempCh2).Value = (Int32.Parse(values[0]) / 100).ToString();
+                _switches.Get((int)Switches.enumSwitch.HumCh2).Value = (Int32.Parse(values[1]) / 100).ToString();
+                _switches.Get((int)Switches.enumSwitch.DewCh2).Value = (Int32.Parse(values[2]) / 100).ToString();
+
+                _serial.Transmit("P1:");
+                ret = _serial.ReceiveTerminated("#");
+                _switches.Get((int)Switches.enumSwitch.PwrCh1).Value = ret.Replace("#", "");
+
+                _serial.Transmit("P2:");
+                ret = _serial.ReceiveTerminated("#");
+                _switches.Get((int)Switches.enumSwitch.PwrCh2).Value = ret.Replace("#", "");
+
+
+            }
         }
 
 
@@ -174,12 +192,12 @@ namespace ASCOM.StroblCap
             if (IsConnected)
                 System.Windows.Forms.MessageBox.Show("Already connected, just press OK");
 
-            using (SetupDialogForm F = new SetupDialogForm(tl))
+            using (SetupDialogForm F = new SetupDialogForm(this))
             {
                 var result = F.ShowDialog();
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
-                    WriteProfile(); // Persist device configuration values to the ASCOM Profile store
+                    _switches.Save();
                 }
             }
         }
@@ -233,6 +251,7 @@ namespace ASCOM.StroblCap
         public void Dispose()
         {
             // Clean up the trace logger and util objects
+            if(_serial != null) _serial.Connected = false;
             tl.Enabled = false;
             tl.Dispose();
             tl = null;
@@ -245,13 +264,15 @@ namespace ASCOM.StroblCap
 
         private bool CheckForStroblCapDevice()
         {
-            _serial.Connected = true;
-            _serial.Transmit("ID:");
-            string ret = _serial.ReceiveTerminated("#");
-            _serial.Connected = false;
-            if (ret == "STROBLCAP#")
-                return true;
-            return false;
+            lock (_lock)
+            {
+                _serial.Transmit("ID:");
+                string ret = _serial.ReceiveTerminated("#");
+
+                if (ret == "STROBLCAP#")
+                    return true;
+                return false;
+            }
         }
         public bool Connected
         {
@@ -268,21 +289,24 @@ namespace ASCOM.StroblCap
 
                 if (value)
                 {
-                    LogMessage("Connected Set", "Connecting to address {0}", comPort);
+                    LogMessage("Connected Set", "Connecting to address {0}", _switches.ComPort);
                     try
                     {
-                        LogMessage("Connected Set", "Connecting to port {0}", comPort);
-                        _serial = new ASCOM.Utilities.Serial();
-                        _serial.PortName = comPort;
-                        _serial.StopBits = SerialStopBits.One;
-                        _serial.Parity = SerialParity.None;
-                        _serial.Speed = SerialSpeed.ps115200;
-                        _serial.DTREnable = false;
-
-                        if (CheckForStroblCapDevice())
-                            connectedState = true;
-                        else
-                            connectedState = false;
+                        LogMessage("Connected Set", "Connecting to port {0}", _switches.ComPort);
+                        lock (_lock)
+                        {
+                            _serial = new ASCOM.Utilities.Serial();
+                            _serial.PortName = _switches.ComPort;
+                            _serial.StopBits = SerialStopBits.One;
+                            _serial.Parity = SerialParity.None;
+                            _serial.Speed = SerialSpeed.ps115200;
+                            _serial.DTREnable = false;
+                            _serial.Connected = true;
+                            if (CheckForStroblCapDevice())
+                                connectedState = true;
+                            else
+                                connectedState = false;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -292,7 +316,7 @@ namespace ASCOM.StroblCap
                 else
                 {
                     connectedState = false;
-                    LogMessage("Connected Set", "Disconnecting from adress {0}", comPort);
+                    LogMessage("Connected Set", "Disconnecting from adress {0}", _switches.ComPort);
                 }
             }
         }
@@ -354,7 +378,6 @@ namespace ASCOM.StroblCap
 
         #region ISwitchV2 Implementation
 
-        private short numSwitch = 6;
 
         /// <summary>
         /// The number of switches managed by this driver
@@ -363,8 +386,8 @@ namespace ASCOM.StroblCap
         {
             get
             {
-                tl.LogMessage("MaxSwitch Get", numSwitch.ToString());
-                return this.numSwitch;
+                tl.LogMessage("MaxSwitch Get", Switches._maxSwitches.ToString());
+                return (short)Switches._maxSwitches;
             }
         }
 
@@ -379,7 +402,7 @@ namespace ASCOM.StroblCap
         {
             Validate("GetSwitchName", id);
             tl.LogMessage("GetSwitchName", string.Format("GetSwitchName({0}) - default Switch{0}", id));
-            return _names[id];
+            return _switches.Get(id).Name;
         }
 
         /// <summary>
@@ -391,7 +414,7 @@ namespace ASCOM.StroblCap
         {
             Validate("SetSwitchName", id);
             tl.LogMessage("SetSwitchName", string.Format("SetSwitchName({0}) = {1} - not implemented", id, name));
-            _names[id] = name;
+            _switches.Get(id).Name = name;
         }
 
         /// <summary>
@@ -402,7 +425,7 @@ namespace ASCOM.StroblCap
         public string GetSwitchDescription(short id)
         {
             Validate("GetSwitchDescription", id);
-            return _namesDesc[id];
+            return _switches.Get(id).Description;
         }
 
         /// <summary>
@@ -419,8 +442,8 @@ namespace ASCOM.StroblCap
         {
             Validate("CanWrite", id);
             // default behavour is to report true
-            tl.LogMessage("CanWrite", string.Format("CanWrite({0}) - default true", id));
-            return true;
+            tl.LogMessage("CanWrite", string.Format("CanWrite({0})", id));
+            return _switches.Get(id).CanWrite;
         }
 
         #region boolean switch members
@@ -437,9 +460,9 @@ namespace ASCOM.StroblCap
         {
             Validate("GetSwitch", id);
             tl.LogMessage("GetSwitch", string.Format("GetSwitch({0}) - not implemented", id));
-            if(_switchTypes[id] == enumSwitchType.analog)
+            if(_switches.Get(id).SwType == enumSwitchType.analog)
                 throw new MethodNotImplementedException("GetSwitch");
-            bool ret = bool.Parse(_swValues[id]);
+            bool ret = bool.Parse(_switches.Get(id).Value);
             return ret;
         }
 
@@ -460,35 +483,37 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitch", str);
                 throw new MethodNotImplementedException(str);
             }
-            if (_switchTypes[id] == enumSwitchType.analog)
+            if (_switches.Get(id).SwType == enumSwitchType.analog)
                 throw new MethodNotImplementedException("SetSwitch");
-            SetBooleanSwitch(state, (enumSwitch)id);
+            SetBooleanSwitch(state, id);
         }
 
-        void SetBooleanSwitch(bool val, enumSwitch sw)
+        void SetBooleanSwitch(bool val, short sw)
         {
-            _serial.Connected = true;
             String cmd = String.Empty;
-            if (val && sw == enumSwitch.OnOffCh1) cmd = "E1:";
-            if (val && sw == enumSwitch.OnOffCh2) cmd = "E2:";
-            if (!val && sw == enumSwitch.OnOffCh1) cmd = "D1:";
-            if (!val && sw == enumSwitch.OnOffCh2) cmd = "D2:";
+            if (val && sw == (int)Switches.enumSwitch.OnOffCh1) cmd = "E1:";
+            else if (val && sw == (int)Switches.enumSwitch.OnOffCh2) cmd = "E2:";
+            else if (!val && sw == (int)Switches.enumSwitch.OnOffCh1) cmd = "D1:";
+            else if (!val && sw == (int)Switches.enumSwitch.OnOffCh2) cmd = "D2:";
 
-            if (val && sw == enumSwitch.AutoCh1) cmd = "A1:";
-            if (val && sw == enumSwitch.AutoCh2) cmd = "A2:";
-            if (!val && sw == enumSwitch.AutoCh1) cmd = "M1:";
-            if (!val && sw == enumSwitch.AutoCh2) cmd = "M2:";
-
-            _serial.Transmit(cmd);
-            String ret = _serial.ReceiveTerminated("#");
-            if(ret == "1#")
+            else if (val && sw == (int)Switches.enumSwitch.AutoCh1) cmd = "A1:";
+            else if (val && sw == (int)Switches.enumSwitch.AutoCh2) cmd = "A2:";
+            else if (!val && sw == (int)Switches.enumSwitch.AutoCh1) cmd = "M1:";
+            else if (!val && sw == (int)Switches.enumSwitch.AutoCh2) cmd = "M2:";
+            else return;
+            lock (_lock)
             {
-                if (val)
-                    _swValues[(int)sw] = "true";
-                else
-                    _swValues[(int)sw] = "false";
+                _serial.Transmit(cmd);
+                String ret = _serial.ReceiveTerminated("#");
+
+                if (ret == "1#")
+                {
+                    if (val)
+                        _switches.Get(sw).Value = "true";
+                    else
+                        _switches.Get(sw).Value = "false";
+                }
             }
-            _serial.Connected = false;
         }
 
         #endregion
@@ -541,12 +566,13 @@ namespace ASCOM.StroblCap
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        private double test = 0.0;
         public double GetSwitchValue(short id)
         {
             Validate("GetSwitchValue", id);
-            if (_switchTypes[id] == enumSwitchType.dio)
+            if (_switches.Get(id).SwType == enumSwitchType.dio)
                 throw new MethodNotImplementedException("GetSwitchValue");
-            return double.Parse(_swValues[id]);
+            return double.Parse(_switches.Get(id).Value);
         }
 
         /// <summary>
@@ -565,35 +591,38 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitchValue", string.Format("SetSwitchValue({0}) - Cannot write", id));
                 return;
             }
-            if (_switchTypes[id] == enumSwitchType.dio)
+            if (_switches.Get(id).SwType == enumSwitchType.dio)
                 throw new MethodNotImplementedException("SetSwitchValue");
 
-            SetAnalogSwitch(value, (enumSwitch)id);
+            SetAnalogSwitch(value, id);
         }
 
-        void SetAnalogSwitch(double val, enumSwitch sw)
+        void SetAnalogSwitch(double val, short sw)
         {
-            _serial.Connected = true;
             String cmd = String.Empty;
 
             int intVal = (int)val;
 
-            if(sw == enumSwitch.PowerCh1)
+            if (sw == (int)Switches.enumSwitch.PowerCh1)
             {
                 cmd = "S1" + intVal.ToString("D3") + ":";
             }
-            if (sw == enumSwitch.PowerCh2)
+            else if (sw == (int)Switches.enumSwitch.PowerCh2)
             {
                 cmd = "S2" + intVal.ToString("D3") + ":";
             }
+            else return;
 
-            _serial.Transmit(cmd);
-            String ret = _serial.ReceiveTerminated("#");
-            if (ret == "1#")
+            lock (_lock)
             {
-                _swValues[(int)sw] = val.ToString(CultureInfo.InvariantCulture);
+                _serial.Transmit(cmd);
+                String ret = _serial.ReceiveTerminated("#");
+
+                if (ret == "1#")
+                {
+                    _switches.Get(sw).Value = val.ToString(CultureInfo.InvariantCulture);
+                }
             }
-            _serial.Connected = false;
         }
 
 
@@ -609,10 +638,10 @@ namespace ASCOM.StroblCap
         /// <param name="id">The id.</param>
         private void Validate(string message, short id)
         {
-            if (id < 0 || id >= numSwitch)
+            if (id < 0 || id >= _switches._maxSwitches)
             {
-                tl.LogMessage(message, string.Format("Switch {0} not available, range is 0 to {1}", id, numSwitch - 1));
-                throw new InvalidValueException(message, id.ToString(), string.Format("0 to {0}", numSwitch - 1));
+                tl.LogMessage(message, string.Format("Switch {0} not available, range is 0 to {1}", id, Switches._maxSwitches - 1));
+                throw new InvalidValueException(message, id.ToString(), string.Format("0 to {0}", Switches._maxSwitches - 1));
             }
         }
 
@@ -754,44 +783,6 @@ namespace ASCOM.StroblCap
             if (!IsConnected)
             {
                 throw new ASCOM.NotConnectedException(message);
-            }
-        }
-
-        /// <summary>
-        /// Read the device configuration from the ASCOM Profile store
-        /// </summary>
-        internal void ReadProfile()
-        {
-            using (Profile driverProfile = new Profile())
-            {
-                driverProfile.DeviceType = "Switch";
-                tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(driverID, traceStateProfileName, string.Empty, traceStateDefault));
-                comPort = driverProfile.GetValue(driverID, comPortProfileName, string.Empty, comPortDefault);
-                for (int i = 0; i < numSwitch; i++)
-                    _names[i] = driverProfile.GetValue(driverID, _nameKeys[i], string.Empty, _namesDefault[i]);
-                for (int i = 0; i < numSwitch; i++)
-                    _namesDesc[i] = driverProfile.GetValue(driverID, _nameDescKeys[i], string.Empty, _namesDescDefault[i]);
-                for (int i = 0; i < numSwitch; i++)
-                    _swValues[i] = driverProfile.GetValue(driverID, _valuesKeys[i], string.Empty, _valuesDefault[i]);
-            }
-        }
-
-        /// <summary>
-        /// Write the device configuration to the  ASCOM  Profile store
-        /// </summary>
-        internal void WriteProfile()
-        {
-            using (Profile driverProfile = new Profile())
-            {
-                driverProfile.DeviceType = "Switch";
-                driverProfile.WriteValue(driverID, traceStateProfileName, tl.Enabled.ToString());
-                driverProfile.WriteValue(driverID, comPortProfileName, comPort.ToString());
-                for (int i = 0; i < numSwitch; i++)
-                    driverProfile.WriteValue(driverID, _nameKeys[i], _names[i]);
-                for (int i = 0; i < numSwitch; i++)
-                    driverProfile.WriteValue(driverID, _nameDescKeys[i], _namesDesc[i]);
-                for (int i = 0; i < numSwitch; i++)
-                    driverProfile.WriteValue(driverID, _valuesKeys[i], _swValues[i].ToString());
             }
         }
 
