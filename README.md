@@ -1,6 +1,6 @@
 
 # StroblCap
-The StroblCap is a simple Dew Cap controller to control two caps.
+The StroblCap is a simple Dew Cap controller for controling two caps.
 The Device is a simple WEMOS D1 mini WLAN device. The communication is done 
 via the COM port.
 This device behaves like a switch device. Each output channel could be set to
