@@ -14,8 +14,8 @@ namespace ASCOM.StroblCap
     public partial class SetupDialogForm : Form
     {
         TraceLogger tl; // Holder for a reference to the driver's trace logger
-        SwitchObj _driver;
-        public SetupDialogForm(SwitchObj driver)
+        Switch _driver;
+        public SetupDialogForm(Switch driver)
         {
             _driver = driver;
             InitializeComponent();
@@ -44,6 +44,11 @@ namespace ASCOM.StroblCap
             _driver.Switches.Get((int)Switches.enumSwitch.DewCh1).Name = textBoxName1.Text + " Dewpoint";
             _driver.Switches.Get((int)Switches.enumSwitch.PwrCh1).Name = textBoxName1.Text + " Power";
 
+            _driver.Switches.Get((int)Switches.enumSwitch.TempCh2).Name = textBoxName2.Text + " Temp.";
+            _driver.Switches.Get((int)Switches.enumSwitch.HumCh2).Name = textBoxName2.Text + " Humidity";
+            _driver.Switches.Get((int)Switches.enumSwitch.DewCh2).Name = textBoxName2.Text + " Dewpoint";
+            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh2).Name = textBoxName2.Text + " Power";
+
             _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Description = textBoxDesc1.Text;
             _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Description = textBoxDesc2.Text;
             _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh1).Description = "Activation of the " + textBoxName1.Text + " Channel at all";
@@ -54,6 +59,11 @@ namespace ASCOM.StroblCap
             _driver.Switches.Get((int)Switches.enumSwitch.HumCh1).Description = "Humidity in %";
             _driver.Switches.Get((int)Switches.enumSwitch.DewCh1).Description = "Dewpoint in °C";
             _driver.Switches.Get((int)Switches.enumSwitch.PwrCh1).Description = "Powersetting in %";
+
+            _driver.Switches.Get((int)Switches.enumSwitch.TempCh2).Description = "Temperature in °C";
+            _driver.Switches.Get((int)Switches.enumSwitch.HumCh2).Description = "Humidity in %";
+            _driver.Switches.Get((int)Switches.enumSwitch.DewCh2).Description = "Dewpoint in °C";
+            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh2).Description = "Powersetting in %";
 
             _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Value = textBoxDefault1.Text;
             _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Value = textBoxDefault2.Text;

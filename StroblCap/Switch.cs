@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ASCOM.StroblCap
 {
-    public class Switch    {
+    public class SwitchObj    {
         public enum enumSwitchType
         {
             analog, dio
@@ -26,7 +26,7 @@ namespace ASCOM.StroblCap
 
         #region Ctor
 
-        public Switch(short id, string name, string description, string value, enumSwitchType type, bool canWrite)
+        public SwitchObj(short id, string name, string description, string value, enumSwitchType type, bool canWrite)
         {
             Id = id;
             Name = name;

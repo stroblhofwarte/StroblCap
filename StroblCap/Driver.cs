@@ -62,7 +62,7 @@ namespace ASCOM.StroblCap
     /// </summary>
     [Guid("8405433a-edcf-4c74-bd39-62972541afe4")]
     [ClassInterface(ClassInterfaceType.None)]
-    public class SwitchObj : ISwitchV2
+    public class Switch : ISwitchV2
     {
         /// <summary>
         /// ASCOM DeviceID (COM ProgID) for this driver.
@@ -119,7 +119,7 @@ namespace ASCOM.StroblCap
         /// Initializes a new instance of the <see cref="StroblCap"/> class.
         /// Must be public for COM registration.
         /// </summary>
-        public SwitchObj()
+        public Switch()
         {
             tl = new TraceLogger("", "StroblCap");
             _switches = new Switches(tl);
@@ -137,7 +137,7 @@ namespace ASCOM.StroblCap
             _readbackTimer.Elapsed += _readbackTimer_Elapsed;
             _readbackTimer.AutoReset = true;
             _readbackTimer.Enabled = true;
-
+            
             tl.LogMessage("Switch", "Completed initialisation");
         }
 
@@ -251,6 +251,7 @@ namespace ASCOM.StroblCap
         public void Dispose()
         {
             // Clean up the trace logger and util objects
+            Switches.Save();
             if(_serial != null) _serial.Connected = false;
             tl.Enabled = false;
             tl.Dispose();
@@ -303,7 +304,10 @@ namespace ASCOM.StroblCap
                             _serial.DTREnable = false;
                             _serial.Connected = true;
                             if (CheckForStroblCapDevice())
+                            {
                                 connectedState = true;
+                                InitializeSwitches();
+                            }
                             else
                                 connectedState = false;
                         }
@@ -460,7 +464,7 @@ namespace ASCOM.StroblCap
         {
             Validate("GetSwitch", id);
             tl.LogMessage("GetSwitch", string.Format("GetSwitch({0}) - not implemented", id));
-            if(_switches.Get(id).SwType == enumSwitchType.analog)
+            if(_switches.Get(id).SwType == SwitchObj.enumSwitchType.analog)
                 throw new MethodNotImplementedException("GetSwitch");
             bool ret = bool.Parse(_switches.Get(id).Value);
             return ret;
@@ -483,9 +487,10 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitch", str);
                 throw new MethodNotImplementedException(str);
             }
-            if (_switches.Get(id).SwType == enumSwitchType.analog)
+            if (_switches.Get(id).SwType == SwitchObj.enumSwitchType.analog)
                 throw new MethodNotImplementedException("SetSwitch");
             SetBooleanSwitch(state, id);
+            Switches.Save();
         }
 
         void SetBooleanSwitch(bool val, short sw)
@@ -570,7 +575,7 @@ namespace ASCOM.StroblCap
         public double GetSwitchValue(short id)
         {
             Validate("GetSwitchValue", id);
-            if (_switches.Get(id).SwType == enumSwitchType.dio)
+            if (_switches.Get(id).SwType == SwitchObj.enumSwitchType.dio)
                 throw new MethodNotImplementedException("GetSwitchValue");
             return double.Parse(_switches.Get(id).Value);
         }
@@ -591,10 +596,11 @@ namespace ASCOM.StroblCap
                 tl.LogMessage("SetSwitchValue", string.Format("SetSwitchValue({0}) - Cannot write", id));
                 return;
             }
-            if (_switches.Get(id).SwType == enumSwitchType.dio)
+            if (_switches.Get(id).SwType == SwitchObj.enumSwitchType.dio)
                 throw new MethodNotImplementedException("SetSwitchValue");
 
             SetAnalogSwitch(value, id);
+            Switches.Save();
         }
 
         void SetAnalogSwitch(double val, short sw)
@@ -630,6 +636,19 @@ namespace ASCOM.StroblCap
         #endregion
 
         #region private methods
+
+        private void InitializeSwitches()
+        {
+            SetSwitch((int)Switches.enumSwitch.AutoCh1, bool.Parse(Switches.Get((int)Switches.enumSwitch.AutoCh1).Value));
+            SetSwitch((int)Switches.enumSwitch.OnOffCh1, bool.Parse(Switches.Get((int)Switches.enumSwitch.OnOffCh1).Value));
+            SetSwitch((int)Switches.enumSwitch.AutoCh2, bool.Parse(Switches.Get((int)Switches.enumSwitch.AutoCh2).Value));
+            SetSwitch((int)Switches.enumSwitch.OnOffCh2, bool.Parse(Switches.Get((int)Switches.enumSwitch.OnOffCh2).Value));
+
+            SetSwitchValue((int)Switches.enumSwitch.PowerCh1, double.Parse(Switches.Get((int)Switches.enumSwitch.PowerCh1).Value, CultureInfo.InvariantCulture));
+            SetSwitchValue((int)Switches.enumSwitch.PowerCh2, double.Parse(Switches.Get((int)Switches.enumSwitch.PowerCh2).Value, CultureInfo.InvariantCulture));
+
+
+        }
 
         /// <summary>
         /// Checks that the switch id is in range and throws an InvalidValueException if it isn't

@@ -23,6 +23,7 @@ namespace ASCOM
             // Uncomment the code that's required
 #if UseChooser
             // choose the device
+            
             string id = ASCOM.DriverAccess.Switch.Choose("ASCOM.StroblCap.Switch");
             if (string.IsNullOrEmpty(id))
                 return;

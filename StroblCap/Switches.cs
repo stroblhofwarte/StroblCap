@@ -38,7 +38,7 @@ namespace ASCOM.StroblCap
         #region Properties
 
         private TraceLogger _log;
-        private Dictionary<short, Switch> _switches;
+        private Dictionary<short, SwitchObj> _switches;
 
         public string ComPort { get; set; }
 
@@ -48,22 +48,22 @@ namespace ASCOM.StroblCap
         public Switches(TraceLogger log)
         {
             _log = log;
-            _switches = new Dictionary<short, Switch>();
+            _switches = new Dictionary<short, SwitchObj>();
 
-            Switch sw1 = new Switch((int)enumSwitch.PowerCh1, "AnalogSW1", "Channel 1 power, 1-100%", "50", enumSwitchType.analog, true);
-            Switch sw2 = new Switch((int)enumSwitch.PowerCh2, "AnalogSW2", "Channel 2 power, 1-100%", "50", enumSwitchType.analog, true);
-            Switch sw3 = new Switch((int)enumSwitch.OnOffCh1, "Channel1OnOff", "Channel 1 activation", "true", enumSwitchType.dio, true);
-            Switch sw4 = new Switch((int)enumSwitch.OnOffCh2, "Channel2OnOff", "Channel 2 activation", "true", enumSwitchType.dio, true);
-            Switch sw5 = new Switch((int)enumSwitch.AutoCh1, "Channel1Auto", "Channel 1 auto mode using environmental sensor", "true", enumSwitchType.dio, true);
-            Switch sw6 = new Switch((int)enumSwitch.AutoCh2, "Channel2Auto", "Channel 2 auto mode using environmental sensor", "true", enumSwitchType.dio, true);
-            Switch sw7 = new Switch((int)enumSwitch.TempCh1, "TempCh1", "Temperature of channel 1's sensor", "255", enumSwitchType.analog, false);
-            Switch sw8 = new Switch((int)enumSwitch.HumCh1, "HumidityCh1", "Humidity of channel 1's sensor", "255", enumSwitchType.analog, false);
-            Switch sw9 = new Switch((int)enumSwitch.DewCh1, "DewCh1", "Dewpoint of channel 1's sensor", "255", enumSwitchType.analog, false);
-            Switch sw10 = new Switch((int)enumSwitch.PwrCh1, "PwrCh1", "Power setting of channel 1", "255", enumSwitchType.analog, false);
-            Switch sw11 = new Switch((int)enumSwitch.TempCh2, "TempCh2", "Temperature of channel 2's sensor", "255", enumSwitchType.analog, false);
-            Switch sw12 = new Switch((int)enumSwitch.HumCh2, "HumidityCh2", "Humidity of channel 2's sensor", "255", enumSwitchType.analog, false);
-            Switch sw13 = new Switch((int)enumSwitch.DewCh2, "DewCh2", "Dewpoint of channel 2's sensor", "255", enumSwitchType.analog, false);
-            Switch sw14 = new Switch((int)enumSwitch.PwrCh2, "PwrCh2", "Power setting of channel 2", "255", enumSwitchType.analog, false);
+            SwitchObj sw1 = new SwitchObj((int)enumSwitch.PowerCh1, "AnalogSW1", "Channel 1 power, 1-100%", "50", SwitchObj.enumSwitchType.analog, true);
+            SwitchObj sw2 = new SwitchObj((int)enumSwitch.PowerCh2, "AnalogSW2", "Channel 2 power, 1-100%", "50", SwitchObj.enumSwitchType.analog, true);
+            SwitchObj sw3 = new SwitchObj((int)enumSwitch.OnOffCh1, "Channel1OnOff", "Channel 1 activation", "true", SwitchObj.enumSwitchType.dio, true);
+            SwitchObj sw4 = new SwitchObj((int)enumSwitch.OnOffCh2, "Channel2OnOff", "Channel 2 activation", "true", SwitchObj.enumSwitchType.dio, true);
+            SwitchObj sw5 = new SwitchObj((int)enumSwitch.AutoCh1, "Channel1Auto", "Channel 1 auto mode using environmental sensor", "true", SwitchObj.enumSwitchType.dio, true);
+            SwitchObj sw6 = new SwitchObj((int)enumSwitch.AutoCh2, "Channel2Auto", "Channel 2 auto mode using environmental sensor", "true", SwitchObj.enumSwitchType.dio, true);
+            SwitchObj sw7 = new SwitchObj((int)enumSwitch.TempCh1, "TempCh1", "Temperature of channel 1's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw8 = new SwitchObj((int)enumSwitch.HumCh1, "HumidityCh1", "Humidity of channel 1's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw9 = new SwitchObj((int)enumSwitch.DewCh1, "DewCh1", "Dewpoint of channel 1's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw10 = new SwitchObj((int)enumSwitch.PwrCh1, "PwrCh1", "Power setting of channel 1", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw11 = new SwitchObj((int)enumSwitch.TempCh2, "TempCh2", "Temperature of channel 2's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw12 = new SwitchObj((int)enumSwitch.HumCh2, "HumidityCh2", "Humidity of channel 2's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw13 = new SwitchObj((int)enumSwitch.DewCh2, "DewCh2", "Dewpoint of channel 2's sensor", "255", SwitchObj.enumSwitchType.analog, false);
+            SwitchObj sw14 = new SwitchObj((int)enumSwitch.PwrCh2, "PwrCh2", "Power setting of channel 2", "255", SwitchObj.enumSwitchType.analog, false);
             _switches.Add(sw1.Id, sw1);
             _switches.Add(sw2.Id, sw2);
             _switches.Add(sw3.Id, sw3);
@@ -72,6 +72,7 @@ namespace ASCOM.StroblCap
             _switches.Add(sw6.Id, sw6);
             _switches.Add(sw7.Id, sw7);
             _switches.Add(sw8.Id, sw8);
+
             _switches.Add(sw9.Id, sw9);
             _switches.Add(sw10.Id, sw10);
             _switches.Add(sw11.Id, sw11);
@@ -87,13 +88,13 @@ namespace ASCOM.StroblCap
             using (Profile driverProfile = new Profile())
             {
                 driverProfile.DeviceType = "Switch";
-                _log.Enabled = Convert.ToBoolean(driverProfile.GetValue(SwitchObj.driverID, SwitchObj.traceStateProfileName, string.Empty, SwitchObj.traceStateDefault));
-                ComPort = driverProfile.GetValue(SwitchObj.driverID, SwitchObj.comPortProfileName, string.Empty, SwitchObj.comPortDefault);
+                _log.Enabled = Convert.ToBoolean(driverProfile.GetValue(Switch.driverID, Switch.traceStateProfileName, string.Empty, Switch.traceStateDefault));
+                ComPort = driverProfile.GetValue(Switch.driverID, Switch.comPortProfileName, string.Empty, Switch.comPortDefault);
                 for(int i = 0; i < _maxSwitches; i++)
                 {
-                    string name = driverProfile.GetValue(SwitchObj.driverID, "name_" + i.ToString(), string.Empty, _switches[(short)i].Name);
-                    string desc = driverProfile.GetValue(SwitchObj.driverID, "desc_" + i.ToString(), string.Empty, _switches[(short)i].Description);
-                    string value = driverProfile.GetValue(SwitchObj.driverID, "value_" + i.ToString(), string.Empty, _switches[(short)i].Value);
+                    string name = driverProfile.GetValue(Switch.driverID, "name_" + i.ToString(), string.Empty, _switches[(short)i].Name);
+                    string desc = driverProfile.GetValue(Switch.driverID, "desc_" + i.ToString(), string.Empty, _switches[(short)i].Description);
+                    string value = driverProfile.GetValue(Switch.driverID, "value_" + i.ToString(), string.Empty, _switches[(short)i].Value);
                     _switches[(short)i].Name = name;
                     _switches[(short)i].Description = desc;
                     _switches[(short)i].Value = value;
@@ -106,19 +107,19 @@ namespace ASCOM.StroblCap
             using (Profile driverProfile = new Profile())
             {
                 driverProfile.DeviceType = "Switch";
-                driverProfile.WriteValue(SwitchObj.driverID, SwitchObj.traceStateProfileName, _log.Enabled.ToString());
-                driverProfile.WriteValue(SwitchObj.driverID, SwitchObj.comPortProfileName, ComPort.ToString());
+                driverProfile.WriteValue(Switch.driverID, Switch.traceStateProfileName, _log.Enabled.ToString());
+                driverProfile.WriteValue(Switch.driverID, Switch.comPortProfileName, ComPort.ToString());
 
                 for (int i = 0; i < _maxSwitches; i++)
                 {
-                    driverProfile.WriteValue(SwitchObj.driverID, "name_" + i.ToString(), _switches[(short)i].Name);
-                    driverProfile.WriteValue(SwitchObj.driverID, "desc_" + i.ToString(), _switches[(short)i].Description);
-                    driverProfile.WriteValue(SwitchObj.driverID, "value_" + i.ToString(), _switches[(short)i].Value);
+                    driverProfile.WriteValue(Switch.driverID, "name_" + i.ToString(), _switches[(short)i].Name);
+                    driverProfile.WriteValue(Switch.driverID, "desc_" + i.ToString(), _switches[(short)i].Description);
+                    driverProfile.WriteValue(Switch.driverID, "value_" + i.ToString(), _switches[(short)i].Value);
                 }
             }
         }
 
-        public Switch Get(short id)
+        public SwitchObj Get(short id)
         {
             if (_switches.ContainsKey(id))
                 return _switches[id];
