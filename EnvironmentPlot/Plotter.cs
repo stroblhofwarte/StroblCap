@@ -28,6 +28,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -35,7 +36,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using uPLibrary.Networking.M2Mqtt;
 
 namespace EnvironmentPlot
 {
@@ -51,44 +51,24 @@ namespace EnvironmentPlot
 
         #region Properties
 
-        private MqttClient _client;
+        private readonly string sensor1File = "ASCOM.StroblCap.Sensor1";
+        private readonly string sensor2File = "ASCOM.StroblCap.Sensor2";
+
         private double _xCh1 = 0.0;
         private double _xCh2 = 0.0;
 
         private double _maxXinDiagram = 600.0;
         private int _errorCounter = 0;
+
         #endregion
 
-        private SerialPort _serial;
-        private string _myPort;
 
 
         public Plotter()
         {
             InitializeComponent();
             String[] ports = SerialPort.GetPortNames();
-            foreach (string port in ports)
-                comboBoxPort.Items.Add(port);
-            _myPort = Properties.Settings.Default.Port;
-            if (comboBoxPort.Items.Contains(_myPort))
-            {
-                comboBoxPort.SelectedItem = _myPort;
-            }
-            if (_myPort == String.Empty)
-                _myPort = "COM1";
-            _serial = new SerialPort(_myPort, 115200, Parity.None, 8, StopBits.One);
 
-        }
-
-        private void comboBoxPort_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            string comport = comboBoxPort.Text;
-            if(_myPort != comport)
-            {
-                _myPort = comport;
-                Properties.Settings.Default.Port = _myPort;
-                _serial = new SerialPort(_myPort, 115200, Parity.None, 8, StopBits.One);
-            }
         }
 
         private double ScrapSerie(Chart widget, enumChart chart, double xValue)
@@ -119,84 +99,6 @@ namespace EnvironmentPlot
 
             x += 1.0;
             return x;
-        }
-
-        private void _client_MqttMsgPublishReceived(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishEventArgs e)
-        {
-            try
-            {
-                if (e.Topic == "Astro/StroblCap/Env/ch1/Temp")
-                {
-                    _xCh1 = ScrapSerie(chartChannel1, enumChart.Temperature, _xCh1);
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    _xCh1 = AddPoint(chartChannel1, enumChart.Temperature, _xCh1, val);
-                    
-                }
-                if (e.Topic == "Astro/StroblCap/Env/ch1/Humidity" && checkBoxHumidityChannel1.Checked)
-                {
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    AddPoint(chartChannel1, enumChart.Humidity, _xCh1, val);
-                    ScrapSerie(chartChannel1, enumChart.Humidity, _xCh1);
-                }
-                if (e.Topic == "Astro/StroblCap/Env/ch1/Dewpoint")
-                {
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    AddPoint(chartChannel1, enumChart.Dewpoint, _xCh1, val);
-                    ScrapSerie(chartChannel1, enumChart.Dewpoint, _xCh1);
-                }
-                if (e.Topic == "Astro/StroblCap/ch1/state" && checkBoxPowerCh1.Checked)
-                {
-                    int intermVal = e.Message[0];
-                    double val = (double)intermVal - 100.0;
-                    AddPoint(chartChannel1, enumChart.Power, _xCh1, val);
-                    ScrapSerie(chartChannel1, enumChart.Power, _xCh1);
-                }
-                _errorCounter = 0;
-            } catch (Exception ex)
-            {
-                _errorCounter++;
-            }
-
-            try
-            {
-                if (e.Topic == "Astro/StroblCap/Env/ch2/Temp")
-                {
-                    _xCh2 = ScrapSerie(chartChannel2, enumChart.Temperature, _xCh2);
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    _xCh2 = AddPoint(chartChannel2, enumChart.Temperature, _xCh2, val);
-
-                }
-                if (e.Topic == "Astro/StroblCap/Env/ch2/Humidity" && checkBoxHumidityChannel2.Checked)
-                {
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    AddPoint(chartChannel2, enumChart.Humidity, _xCh2, val);
-                    ScrapSerie(chartChannel2, enumChart.Humidity, _xCh2);
-                }
-                if (e.Topic == "Astro/StroblCap/Env/ch2/Dewpoint")
-                {
-                    double val = double.Parse(ByteArrayToString(e.Message), CultureInfo.InvariantCulture);
-                    AddPoint(chartChannel2, enumChart.Dewpoint, _xCh2, val);
-                    ScrapSerie(chartChannel2, enumChart.Dewpoint, _xCh2);
-                }
-                if (e.Topic == "Astro/StroblCap/ch2/state" && checkBoxPowerCh2.Checked)
-                {
-                    int intermVal = e.Message[0];
-                    double val = (double)intermVal - 100.0;
-                    AddPoint(chartChannel2, enumChart.Power, _xCh2, val);
-                    ScrapSerie(chartChannel2, enumChart.Power, _xCh2);
-                }
-                _errorCounter = 0;
-            }
-            catch (Exception ex)
-            {
-                _errorCounter++;
-            }
-        }
-
-        private string ByteArrayToString(byte[] arr)
-        {
-            System.Text.ASCIIEncoding enc = new System.Text.ASCIIEncoding();
-            return enc.GetString(arr);
         }
 
         private void Plotter_FormClosing(object sender, FormClosingEventArgs e)
@@ -254,127 +156,108 @@ namespace EnvironmentPlot
             chart1Location.Y = 0;
             chartChannel1.Location = chart1Location;
             Size size = chartChannel1.Size;
-            size.Height = height / 2;
+            size.Height = height / 3;
             chartChannel1.Size = size;
-            chartChannel1.Height = (height / 2) -15;
+            chartChannel1.Height = (height / 3) -15;
 
             Point chart2Location = chartChannel2.Location;
-            chart1Location.Y = (height/2) -15;
+            chart1Location.Y = (height/3) -15;
             chartChannel2.Location = chart1Location;
             size = chartChannel2.Size;
-            size.Height = height / 2;
+            size.Height = height / 3;
             chartChannel2.Size = size;
-            chartChannel2.Height = (height / 2) -15;
-            Point checkboxCalc = checkBoxHumidityChannel2.Location;
-            Point referenceCheck = checkBoxHumidityChannel1.Location;
-            checkboxCalc.Y = height / 2 + referenceCheck.Y;
-            checkBoxHumidityChannel2.Location = checkboxCalc;
-            checkboxCalc = checkBoxPowerCh2.Location;
-            referenceCheck = checkBoxPowerCh1.Location;
-            checkboxCalc.Y = height / 2 + referenceCheck.Y;
-            checkBoxPowerCh2.Location = checkboxCalc;
-        }
+            chartChannel2.Height = (height / 3) -15;
 
-        private void checkBoxHumidityChannel1_CheckedChanged(object sender, EventArgs e)
-        {
-            if(!checkBoxHumidityChannel1.Checked)
-            {
-                chartChannel1.Series[(int)enumChart.Humidity].Points.Clear();
-            }
             
-        }
+            panelControl.Size = size;
+            panelControl.Height = (height / 3) - 15;
 
-        private void checkBoxPowerCh1_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!checkBoxPowerCh1.Checked)
-            {
-                chartChannel1.Series[(int)enumChart.Power].Points.Clear();
-            }
-           
-        }
-
-        private void checkBoxHumidityChannel2_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!checkBoxHumidityChannel2.Checked)
-            {
-                chartChannel2.Series[(int)enumChart.Humidity].Points.Clear();
-            }
-        }
-
-        private void checkBoxPowerCh2_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!checkBoxPowerCh2.Checked)
-            {
-                chartChannel2.Series[(int)enumChart.Power].Points.Clear();
-            }
         }
 
         private void timerDataRead_Tick(object sender, EventArgs e)
         {
-            string channel1 = Communicate("G1:");
-            string channel2 = Communicate("G2:");
-            string power1 = Communicate("P1:");
-            string power2 = Communicate("P2:");
-            int pwm1 = int.Parse(power1);
-            int pwm2 = int.Parse(power2);
+            double temp1 = 0.0;
+            double hum1 = 0.0;
+            double dew1 = 0.0;
 
+            double temp2 = 0.0;
+            double hum2 = 0.0;
+            double dew2 = 0.0;
 
-            if (channel1 != String.Empty)
-            {
-                double temp, hum, dew, pres;
-                if (ParseSensor(channel1, out temp, out hum, out dew, out pres))
-                {
-                    if (temp != 0.0 || hum != 0.0 || dew != 0.0 || pres != 0.0)
-                    {
-                        _xCh1 = ScrapSerie(chartChannel1, enumChart.Temperature, _xCh1);
-                        _xCh1 = AddPoint(chartChannel1, enumChart.Temperature, _xCh1, temp);
+            ReadSensorFile(sensor1File, out temp1, out hum1, out dew1);
+            ReadSensorFile(sensor2File, out temp2, out hum2, out dew2);
 
-                        if (checkBoxHumidityChannel1.Checked)
-                        {
-                            AddPoint(chartChannel1, enumChart.Humidity, _xCh1, hum);
-                            ScrapSerie(chartChannel1, enumChart.Humidity, _xCh1);
-                        }
+            _xCh1 = ScrapSerie(chartChannel1, enumChart.Temperature, _xCh1);
+            _xCh1 = AddPoint(chartChannel1, enumChart.Temperature, _xCh1, temp1);
 
-                        AddPoint(chartChannel1, enumChart.Dewpoint, _xCh1, dew);
-                        ScrapSerie(chartChannel1, enumChart.Dewpoint, _xCh1);
-                    }
-                    if (checkBoxPowerCh1.Checked)
-                    {
-                        double val = (double)pwm1;
-                        AddPoint(chartChannel1, enumChart.Power, _xCh1, val);
-                        ScrapSerie(chartChannel1, enumChart.Power, _xCh1);
-                    }
-                }
-            }
-            if (channel2 != String.Empty)
-            {
-                double temp, hum, dew, pres;
-                if (ParseSensor(channel2, out temp, out hum, out dew, out pres))
-                {
-                    if (temp != 0.0 || hum != 0.0 || dew != 0.0 || pres != 0.0)
-                    {
-                        _xCh2 = ScrapSerie(chartChannel2, enumChart.Temperature, _xCh2);
-                        _xCh2 = AddPoint(chartChannel2, enumChart.Temperature, _xCh2, temp);
-
-                        if (checkBoxHumidityChannel2.Checked)
-                        {
-                            AddPoint(chartChannel2, enumChart.Humidity, _xCh2, hum);
-                            ScrapSerie(chartChannel2, enumChart.Humidity, _xCh2);
-                        }
-
-                        AddPoint(chartChannel2, enumChart.Dewpoint, _xCh2, dew);
-                        ScrapSerie(chartChannel2, enumChart.Dewpoint, _xCh1);
-                    }
-                    if (checkBoxPowerCh2.Checked)
-                    {
-                        double val = (double)pwm2;
-                        AddPoint(chartChannel2, enumChart.Power, _xCh2, val);
-                        ScrapSerie(chartChannel2, enumChart.Power, _xCh2);
-                    }
-                }
-            }
+            AddPoint(chartChannel1, enumChart.Dewpoint, _xCh1, dew1);
+            ScrapSerie(chartChannel1, enumChart.Dewpoint, _xCh1);
+            
+            _xCh2 = ScrapSerie(chartChannel2, enumChart.Temperature, _xCh2);
+            _xCh2 = AddPoint(chartChannel2, enumChart.Temperature, _xCh2, temp2);
+            AddPoint(chartChannel2, enumChart.Dewpoint, _xCh2, dew2);
+            ScrapSerie(chartChannel2, enumChart.Dewpoint, _xCh1);
+            
         }
 
+        private void ReadSensorFile(string filename, out double temp, out double hum, out double dew)
+        {
+            temp = 0.0;
+            hum = 0.0;
+            dew = 0.0;
+            int retry = 5;
+            while (true)
+            {
+                try
+                {
+                    string test = Path.GetTempPath() + filename;
+                    using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        StreamReader rd = new StreamReader(fs);
+                        string line = rd.ReadLine();
+                        string[] vals = line.Split(';');
+                        if (vals.Length == 3)
+                        {
+                            try
+                            {
+                                temp = double.Parse(vals[0], CultureInfo.InvariantCulture);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                temp = 0.0;
+                            }
+                            try
+                            {
+                                hum = double.Parse(vals[1], CultureInfo.InvariantCulture);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                hum = 0.0;
+                            }
+                            try
+                            {
+                                dew = double.Parse(vals[2], CultureInfo.InvariantCulture);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                dew = 0.0;
+                            }
+                        }
+                        rd.Close();
+                        fs.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    retry--;
+                    continue;
+                }
+                break;
+            }
+        }
         private bool ParseSensor(string str, out double temp, out double hum, out double dew, out double pre)
         {
             String[] fields = str.Split(';');
@@ -385,50 +268,6 @@ namespace EnvironmentPlot
             dew = (double)((int.Parse(fields[2]) / 100.0));
             pre = (double)((int.Parse(fields[3]) / 10.0));
             return true;
-        }
-
-        private string Communicate(string cmd)
-        {
-            string ret = String.Empty;
-            int timeout = 500;
-            while (true)
-            {
-                try
-                {
-                    _serial.Open();
-                    _serial.Write(cmd);
-                    while(timeout >0 )
-                    {
-                        if(_serial.BytesToRead > 0)
-                        {
-                            ret += _serial.ReadExisting();
-                            if (ret.Contains("#"))
-                                break;
-                        }
-                        Thread.Sleep(1);
-                        timeout--;
-                    }
-                    _serial.Close();
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    // Port in use (by ASCOM driver)
-                    _serial.Close();
-                    Thread.Sleep(100);
-                    continue;
-                }
-            }
-            // Remove all chars other than 0-9 and ;
-            StringBuilder sb = new StringBuilder();
-            foreach (char c in ret)
-            {
-                if ((c >= '0' && c <= '9') || c == ';')
-                {
-                    sb.Append(c);
-                }
-            }
-            return sb.ToString();
         }
 
         

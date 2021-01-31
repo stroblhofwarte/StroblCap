@@ -25,6 +25,7 @@ namespace ASCOM
             // choose the device
             
             string id = ASCOM.DriverAccess.Switch.Choose("ASCOM.StroblCap.Switch");
+            //string id = ASCOM.DriverAccess.ObservingConditions.Choose("ASCOM.StroblCap.ObservingConditions");
             if (string.IsNullOrEmpty(id))
                 return;
             // create this device

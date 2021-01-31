@@ -1,28 +1,20 @@
 //tabs=4
 // --------------------------------------------------------------------------------
-// TODO fill in this information for your driver, then remove this line!
 //
 // ASCOM Switch driver for StroblCap
 //
 // Description:	The StroblCap is a simple Dew Cap controller to control four caps.
-//              The Device is a aimple WEMOS D1 mini WLAN device, connected to
-//              a MQTT broker and supports eight topics:
-//                      Astro/StroblCap/ch[1..4] to set the output power between a value of 0-100 (%)
-//              and
-//                      Astro/StroblCap/ch[1..4]/state to report back the power level (also 0-100).
-// 
-//              For a complete setup a MQTT broker is required in the network setup of the telescope.
-//              For Win10 the mosquitto broker is a good decision. Please do not forgett to open the
-//              firewall for the mosquitto process!
+//              It supports two enwironment sensors for Channel 1 and Channel 2. One of 
+//              this sensors can be used as weather sensor.
 //
-// Implements:	ASCOM Switch interface version: <To be completed by driver developer>
-// Author:		(XXX) Your N. Here <your@email.here>
+// Implements:	ASCOM Switch interface version: 1.0
+// Author:		Othmar Ehrhardt, <othmar.ehrhardt@t-online.de>, https://astro.stroblhof-oberrohrbach.de
 //
 // Edit Log:
 //
 // Date			Who	Vers	Description
 // -----------	---	-----	-------------------------------------------------------
-// dd-mmm-yyyy	XXX	6.0.0	Initial edit, created from ASCOM driver template
+// 31.01.2021               Weather device interface added.
 // --------------------------------------------------------------------------------
 //
 
@@ -46,6 +38,7 @@ using System.Globalization;
 using System.Collections;
 using System.Threading;
 using static ASCOM.StroblCap.Switch;
+using System.IO;
 
 namespace ASCOM.StroblCap
 {
@@ -71,6 +64,8 @@ namespace ASCOM.StroblCap
         /// 
          #region Properties
 
+        public static readonly string sensor1File = "ASCOM.StroblCap.Sensor1";
+        public static readonly string sensor2File = "ASCOM.StroblCap.Sensor2";
 
         internal static string driverID = "ASCOM.StroblCap.Switch";
         // TODO Change the descriptive string for your driver then remove this line
@@ -149,16 +144,26 @@ namespace ASCOM.StroblCap
                 _serial.Transmit("G1:");
                 String ret = _serial.ReceiveTerminated("#");
                 String[] values = ret.Split(';');
-                _switches.Get((int)Switches.enumSwitch.TempCh1).Value = (Int32.Parse(values[0]) / 100).ToString();
-                _switches.Get((int)Switches.enumSwitch.HumCh1).Value = (Int32.Parse(values[1]) / 100).ToString();
-                _switches.Get((int)Switches.enumSwitch.DewCh1).Value = (Int32.Parse(values[2]) / 100).ToString();
+                double tempCh1 = (double)((double)Int32.Parse(values[0]) / 100.0);
+                double humCh1 = (double)((double)Int32.Parse(values[1]) / 100.0);
+                double dewCh1 = (double)((double)Int32.Parse(values[2]) / 100.0);
+                WriteSensorFile(sensor1File, tempCh1, humCh1, dewCh1);
+
+                _switches.Get((int)Switches.enumSwitch.TempCh1).Value = ((double)Int32.Parse(values[0]) / 100.0).ToString(CultureInfo.InvariantCulture);
+                _switches.Get((int)Switches.enumSwitch.HumCh1).Value = ((double)Int32.Parse(values[1]) / 100.0).ToString(CultureInfo.InvariantCulture);
+                _switches.Get((int)Switches.enumSwitch.DewCh1).Value = ((double)Int32.Parse(values[2]) / 100.0).ToString(CultureInfo.InvariantCulture);
 
                 _serial.Transmit("G2:");
                 ret = _serial.ReceiveTerminated("#");
                 values = ret.Split(';');
-                _switches.Get((int)Switches.enumSwitch.TempCh2).Value = (Int32.Parse(values[0]) / 100).ToString();
-                _switches.Get((int)Switches.enumSwitch.HumCh2).Value = (Int32.Parse(values[1]) / 100).ToString();
-                _switches.Get((int)Switches.enumSwitch.DewCh2).Value = (Int32.Parse(values[2]) / 100).ToString();
+                double tempCh2 = (double)(double)(Int32.Parse(values[0]) / 100.0);
+                double humCh2 = (double)((double)Int32.Parse(values[1]) / 100.0);
+                double dewCh2 = (double)((double)Int32.Parse(values[2]) / 100.0);
+                WriteSensorFile(sensor2File, tempCh2, humCh2, dewCh2);
+
+                _switches.Get((int)Switches.enumSwitch.TempCh2).Value = ((double)Int32.Parse(values[0]) / 100.0).ToString(CultureInfo.InvariantCulture);
+                _switches.Get((int)Switches.enumSwitch.HumCh2).Value = ((double)Int32.Parse(values[1]) / 100.0).ToString(CultureInfo.InvariantCulture);
+                _switches.Get((int)Switches.enumSwitch.DewCh2).Value = ((double)Int32.Parse(values[2]) / 100.0).ToString(CultureInfo.InvariantCulture);
 
                 _serial.Transmit("P1:");
                 ret = _serial.ReceiveTerminated("#");
@@ -172,6 +177,29 @@ namespace ASCOM.StroblCap
             }
         }
 
+        private void WriteSensorFile(string filename, double temp, double hum, double dew)
+        {
+            int retry = 5;
+            while (true)
+            {
+                try
+                {
+                    string test = Path.GetTempPath() + filename;
+                    using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        StreamWriter wr = new StreamWriter(fs);
+                        wr.WriteLine(temp.ToString(CultureInfo.InvariantCulture) + ";" + hum.ToString(CultureInfo.InvariantCulture) + ";" + dew.ToString(CultureInfo.InvariantCulture));
+                        wr.Close();
+                        fs.Close();
+                    }
+                } catch (Exception ex)
+                {
+                    retry--;
+                    continue;
+                }
+                break;
+            }
+        }
 
         //
         // PUBLIC COM INTERFACE ISwitchV2 IMPLEMENTATION
