@@ -11,9 +11,9 @@ dew control or not.
 
 The ASCOM driver is compiled with Visual Studio 2019 Communitiy. 
 
-'StroblCap Setup.exe' is a precompiled driver package and can be used for x64 Win10 installations.
+A precompiled installer for x64 Win10 could be found here: [Setup.exe](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap/StroblCap%20Setup.exe)
 
-(18.01.2021) Bug: The automatic dew control is not running yet.
+This package contains the ASCOM driver and the EnvironmentPlot application. 
 
 # Firmware
 
@@ -66,15 +66,11 @@ The general command format is "cmd:", the response to a command is always postfi
 
 # EnvironmentPlot Application
 
-DEPRICATED: The environment values are now in the ASCOM client!
+The EnvironmentPlot application is a ASCOM client for the StroblCap device. This application can be used when your 
+astronomy software does not support ASCOM switch devices like SGP < 4.0.
 
-The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
-dewpoint, humidity and the power setting for channel 1 and 2. At first startup it is only a small minimized window in 
-the upper left corner. Place this app where you want to have it on the screen and the size you need. 
-This position and size will be stored for the next startup. Do not forgett to set the COM port of the StroblCap device!
+![Screenshot, EnvronmentPlot](https://github.com/stroblhofwarte/StroblCap/blob/main/EnvironmentPlot.png )
 
-![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
-
-Screenshot where the EnvironmentPlot is running on the bottom part of the screen. A BME280 sensor is connected only for channel 1, the second channel send always zero for all values because there is no sensor. The app will not show this values! The N.I.N.A. application is running in parallel to control the settings 
-of the StroblCap device.
+After installation of the [Setup.exe](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap/StroblCap%20Setup.exe) file, the EnvironmentPlot application can be found in following folder:
+C:\Program Files (x86)\Common Files\ASCOM\Switch\EnvironmentPlot
 
