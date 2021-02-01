@@ -71,3 +71,6 @@ astronomy software does not support ASCOM switch devices like SGP < 4.0.
 
 ![Screenshot, EnvronmentPlot](https://github.com/stroblhofwarte/StroblCap/blob/main/EnvironmentPlot.png )
 
+After installation of the [Setup.exe](https://github.com/stroblhofwarte/StroblCap/blob/main/) file, the EnvironmentPlot application can be found in following folder:
+C:\Program Files (x86)\Common Files\ASCOM\Switch\EnvironmentPlot
+
