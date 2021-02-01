@@ -69,5 +69,6 @@ The general command format is "cmd:", the response to a command is always postfi
 The EnvironmentPlot application is a ASCOM client for the StroblCap device. This application can be used when your 
 astronomy software does not support ASCOM switch devices like SGP < 4.0.
 
-![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
+![Screenshot, EnvronmentPlot](https://github.com/stroblhofwarte/StroblCap/blob/main/
+EnvironmentPlot.png )
 
