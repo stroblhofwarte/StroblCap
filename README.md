@@ -12,6 +12,7 @@ dew control or not.
 The ASCOM driver is compiled with Visual Studio 2019 Communitiy. 
 
 A precompiled installer for x64 Win10 could be found here: [Setup.exe](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap/StroblCap%20Setup.exe)
+
 This package contains the ASCOM driver and the EnvironmentPlot application. 
 
 # Firmware
