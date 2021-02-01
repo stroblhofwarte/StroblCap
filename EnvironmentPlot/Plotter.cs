@@ -22,6 +22,7 @@
  *
 */
 
+using ASCOM.DriverAccess;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -49,6 +50,25 @@ namespace EnvironmentPlot
             Power = 3
         }
 
+        public enum enumSwitch
+        {
+            PowerCh1 = 0,
+            OnOffCh1 = 1,
+            AutoCh1 = 2,
+            TempCh1 = 3,
+            HumCh1 = 4,
+            DewCh1 = 5,
+            PwrCh1 = 6,
+
+            PowerCh2 = 7,
+            OnOffCh2 = 8,
+            AutoCh2 = 9,
+            TempCh2 = 10,
+            HumCh2 = 11,
+            DewCh2 = 12,
+            PwrCh2 = 13
+        }
+
         #region Properties
 
         private readonly string sensor1File = "ASCOM.StroblCap.Sensor1";
@@ -59,6 +79,13 @@ namespace EnvironmentPlot
 
         private double _maxXinDiagram = 600.0;
         private int _errorCounter = 0;
+
+        private ASCOM.DriverAccess.Switch _switch;
+        private bool _switcheReady;
+
+        private bool _leftExpanded = false;
+        private bool _rightExpanded = false;
+        private bool _systemExpanded = true;
 
         #endregion
 
@@ -71,6 +98,44 @@ namespace EnvironmentPlot
 
         }
 
+        private void ReadSwitched()
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            // Channel 1
+            labelChannel1.Text = _switch.GetSwitchName((short)enumSwitch.PowerCh1);
+            labelDesc1.Text = _switch.GetSwitchDescription((short)enumSwitch.PowerCh1);
+            if (_switch.GetSwitch((short)enumSwitch.OnOffCh1))
+                buttonCh1OnOff.Image = global::EnvironmentPlot.Properties.Resources.On;
+            else
+                buttonCh1OnOff.Image = global::EnvironmentPlot.Properties.Resources.Off;
+
+            if (_switch.GetSwitch((short)enumSwitch.AutoCh1))
+                buttonAuto1.Image = global::EnvironmentPlot.Properties.Resources.On;
+            else
+                buttonAuto1.Image = global::EnvironmentPlot.Properties.Resources.Off;
+
+            numericUpDownChannel1.Value = (int)_switch.GetSwitchValue((short)enumSwitch.PowerCh1);
+            _switch.SetSwitchValue((short)enumSwitch.PowerCh1, (double)numericUpDownChannel1.Value);
+
+            // Channel 2
+            labelChannel2.Text = _switch.GetSwitchName((short)enumSwitch.PowerCh2);
+            labelDesc2.Text = _switch.GetSwitchDescription((short)enumSwitch.PowerCh2);
+            if (_switch.GetSwitch((short)enumSwitch.OnOffCh2))
+                buttonCh2OnOff.Image = global::EnvironmentPlot.Properties.Resources.On;
+            else
+                buttonCh2OnOff.Image = global::EnvironmentPlot.Properties.Resources.Off;
+
+            if (_switch.GetSwitch((short)enumSwitch.AutoCh2))
+                buttonAuto2.Image = global::EnvironmentPlot.Properties.Resources.On;
+            else
+                buttonAuto2.Image = global::EnvironmentPlot.Properties.Resources.Off;
+
+            numericUpDownChannel2.Value = (int)_switch.GetSwitchValue((short)enumSwitch.PowerCh2);
+            _switch.SetSwitchValue((short)enumSwitch.PowerCh2, (double)numericUpDownChannel2.Value);
+
+        }
         private double ScrapSerie(Chart widget, enumChart chart, double xValue)
         {
             if (xValue > _maxXinDiagram)
@@ -156,22 +221,21 @@ namespace EnvironmentPlot
             chart1Location.Y = 0;
             chartChannel1.Location = chart1Location;
             Size size = chartChannel1.Size;
-            size.Height = height / 3;
+            size.Height = height / 2;
             chartChannel1.Size = size;
-            chartChannel1.Height = (height / 3) -15;
+            chartChannel1.Height = (height / 2) -15;
 
             Point chart2Location = chartChannel2.Location;
-            chart1Location.Y = (height/3) -15;
+            chart1Location.Y = (height/2) -15;
             chartChannel2.Location = chart1Location;
             size = chartChannel2.Size;
-            size.Height = height / 3;
+            size.Height = height / 2;
             chartChannel2.Size = size;
-            chartChannel2.Height = (height / 3) -15;
+            chartChannel2.Height = (height / 2) -15;
 
-            
-            panelControl.Size = size;
-            panelControl.Height = (height / 3) - 15;
-
+            ExpandLeft(_leftExpanded);
+            ExpandRight(_rightExpanded);
+            ExpandSystem(_systemExpanded);
         }
 
         private void timerDataRead_Tick(object sender, EventArgs e)
@@ -179,13 +243,15 @@ namespace EnvironmentPlot
             double temp1 = 0.0;
             double hum1 = 0.0;
             double dew1 = 0.0;
+            long stamp1 = 0;
 
             double temp2 = 0.0;
             double hum2 = 0.0;
             double dew2 = 0.0;
+            long stamp2 = 0;
 
-            ReadSensorFile(sensor1File, out temp1, out hum1, out dew1);
-            ReadSensorFile(sensor2File, out temp2, out hum2, out dew2);
+            ReadSensorFile(sensor1File, out temp1, out hum1, out dew1, out stamp1);
+            ReadSensorFile(sensor2File, out temp2, out hum2, out dew2, out stamp2);
 
             _xCh1 = ScrapSerie(chartChannel1, enumChart.Temperature, _xCh1);
             _xCh1 = AddPoint(chartChannel1, enumChart.Temperature, _xCh1, temp1);
@@ -197,14 +263,52 @@ namespace EnvironmentPlot
             _xCh2 = AddPoint(chartChannel2, enumChart.Temperature, _xCh2, temp2);
             AddPoint(chartChannel2, enumChart.Dewpoint, _xCh2, dew2);
             ScrapSerie(chartChannel2, enumChart.Dewpoint, _xCh1);
-            
+
+            string unit1 = " sec";
+            string unit2 = " sec";
+            if(stamp1 > 60)
+            {
+                stamp1 = stamp1 / 60;
+                unit1 = " min";
+            }
+            if (stamp1 > 60)
+            {
+                stamp1 = stamp1 / 60;
+                unit1 = " h";
+            }
+            if (stamp2 > 60)
+            {
+                stamp2 = stamp2 / 60;
+                unit2 = " min";
+            }
+            if (stamp2 > 60)
+            {
+                stamp2 = stamp2 / 60;
+                unit2 = " h";
+            }
+
+            labelAge1.Text = stamp1.ToString(CultureInfo.InvariantCulture) + unit1;
+            labelAge2.Text = stamp2.ToString(CultureInfo.InvariantCulture) + unit2;
+
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+            labelTemp1.Text = (_switch.GetSwitchValue((short)enumSwitch.TempCh1)/100).ToString(CultureInfo.InvariantCulture) + "°C";
+            labelDew1.Text = (_switch.GetSwitchValue((short)enumSwitch.DewCh1)/100).ToString(CultureInfo.InvariantCulture) + "°C";
+            labelHum1.Text = (_switch.GetSwitchValue((short)enumSwitch.HumCh1)/100).ToString(CultureInfo.InvariantCulture) + " %";
+            labelPower1.Text = _switch.GetSwitchValue((short)enumSwitch.PwrCh1).ToString(CultureInfo.InvariantCulture) + " %";
+
+            labelTemp2.Text = (_switch.GetSwitchValue((short)enumSwitch.TempCh2) / 100).ToString(CultureInfo.InvariantCulture) + "°C";
+            labelDew2.Text = (_switch.GetSwitchValue((short)enumSwitch.DewCh2) / 100).ToString(CultureInfo.InvariantCulture) + "°C";
+            labelHum2.Text = (_switch.GetSwitchValue((short)enumSwitch.HumCh2) / 100).ToString(CultureInfo.InvariantCulture) + " %";
+            labelPower2.Text = _switch.GetSwitchValue((short)enumSwitch.PwrCh2).ToString(CultureInfo.InvariantCulture) + " %";
         }
 
-        private void ReadSensorFile(string filename, out double temp, out double hum, out double dew)
+        private void ReadSensorFile(string filename, out double temp, out double hum, out double dew, out long timestamp)
         {
             temp = 0.0;
             hum = 0.0;
             dew = 0.0;
+            timestamp = 0;
             int retry = 5;
             while (true)
             {
@@ -216,7 +320,7 @@ namespace EnvironmentPlot
                         StreamReader rd = new StreamReader(fs);
                         string line = rd.ReadLine();
                         string[] vals = line.Split(';');
-                        if (vals.Length == 3)
+                        if (vals.Length == 4)
                         {
                             try
                             {
@@ -245,6 +349,16 @@ namespace EnvironmentPlot
                             {
                                 dew = 0.0;
                             }
+                            try
+                            {
+                                timestamp = long.Parse(vals[3], CultureInfo.InvariantCulture);
+                                timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() - timestamp;
+
+                            }
+                            catch (Exception ex)
+                            {
+                                timestamp = 0;
+                            }
                         }
                         rd.Close();
                         fs.Close();
@@ -270,6 +384,207 @@ namespace EnvironmentPlot
             return true;
         }
 
-        
+        private void buttonSetup_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_switcheReady)
+                    _switch.SetupDialog();
+                else
+                {
+                    _switch = new Switch("ASCOM.StroblCap.Switch");
+                    _switch.SetupDialog();
+                    _switcheReady = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                
+            }
+        }
+
+        private void buttonPanelLeft_Click(object sender, EventArgs e)
+        {
+            if(_leftExpanded)
+            {
+                _leftExpanded = false;
+            }
+            else
+            {
+                _leftExpanded = true;
+            }
+            ExpandLeft(_leftExpanded);
+        }
+
+        private void ExpandLeft(bool expand)
+        {
+            if(expand)
+                panelLeft.Location = new Point(0, 0);
+            else
+                panelLeft.Location = new Point(-(panelLeft.Width - 18), 0);
+        }
+
+        private void ExpandRight(bool expand)
+        {
+            if (expand)
+                panelRight.Location = new Point(this.Width - panelRight.Width - 10, 0);
+            else
+                panelRight.Location = new Point(this.Width - 35, 0);
+        }
+
+        private void ExpandSystem(bool expand)
+        {
+            if (expand)
+                panelSystem.Location = new Point((this.Width - panelSystem.Width) / 2, 0);
+            else
+                panelSystem.Location = new Point((this.Width - panelSystem.Width) / 2, -(panelSystem.Height - 20));
+        }
+
+        private void buttonPanelSystem_Click(object sender, EventArgs e)
+        {
+            if (_systemExpanded)
+            {
+                _systemExpanded = false;
+            }
+            else
+            {
+                _systemExpanded = true;
+            }
+            ExpandSystem(_systemExpanded);
+        }
+
+        private void buttonPanelRight_Click(object sender, EventArgs e)
+        {
+            if (_rightExpanded)
+            {
+                _rightExpanded = false;
+            }
+            else
+            {
+                _rightExpanded = true;
+            }
+            ExpandRight(_rightExpanded);
+        }
+
+        private void buttonConnect_Click(object sender, EventArgs e)
+        {
+            if(_switcheReady)
+            {
+                if(_switch.Connected)
+                {
+                    _switch.Connected = false;
+                    _switch.Dispose();
+                    _switcheReady = false;
+                    this.buttonConnect.Image = global::EnvironmentPlot.Properties.Resources.Off;
+                }
+                else
+                {
+                    _switch.Connected = true;
+                    if (_switch.Connected)
+                        this.buttonConnect.Image = global::EnvironmentPlot.Properties.Resources.On;
+                    else
+                        this.buttonConnect.Image = global::EnvironmentPlot.Properties.Resources.Off;
+                }
+            }
+            else
+            {
+                _switch = new Switch("ASCOM.StroblCap.Switch");
+                _switcheReady = true;
+                _switch.Connected = true;
+                if (_switch.Connected)
+                    this.buttonConnect.Image = global::EnvironmentPlot.Properties.Resources.On;
+                else
+                    this.buttonConnect.Image = global::EnvironmentPlot.Properties.Resources.Off;
+            }
+            ReadSwitched();
+        }
+
+        private void buttonCh1OnOff_Click(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            if (_switch.GetSwitch((short)enumSwitch.OnOffCh1))
+            {
+                _switch.SetSwitch((short)enumSwitch.OnOffCh1, false);
+                buttonCh1OnOff.Image = global::EnvironmentPlot.Properties.Resources.Off;
+            }
+            else
+            {
+                _switch.SetSwitch((short)enumSwitch.OnOffCh1, true);
+                buttonCh1OnOff.Image = global::EnvironmentPlot.Properties.Resources.On;
+            }
+           
+        }
+
+        private void numericUpDownChannel1_ValueChanged(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            _switch.SetSwitchValue((short)enumSwitch.PowerCh1, (double)numericUpDownChannel1.Value);
+        }
+
+        private void buttonAuto1_Click(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            if (_switch.GetSwitch((short)enumSwitch.AutoCh1))
+            {
+                _switch.SetSwitch((short)enumSwitch.AutoCh1, false);
+                buttonAuto1.Image = global::EnvironmentPlot.Properties.Resources.Off;
+                _switch.SetSwitchValue((short)enumSwitch.PowerCh1, (double)numericUpDownChannel1.Value);
+            }
+            else
+            {
+                _switch.SetSwitch((short)enumSwitch.AutoCh1, true);
+                buttonAuto1.Image = global::EnvironmentPlot.Properties.Resources.On;
+            }
+        }
+
+        private void buttonCh2OnOff_Click(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            if (_switch.GetSwitch((short)enumSwitch.OnOffCh2))
+            {
+                _switch.SetSwitch((short)enumSwitch.OnOffCh2, false);
+                buttonCh2OnOff.Image = global::EnvironmentPlot.Properties.Resources.Off;
+            }
+            else
+            {
+                _switch.SetSwitch((short)enumSwitch.OnOffCh2, true);
+                buttonCh2OnOff.Image = global::EnvironmentPlot.Properties.Resources.On;
+            }
+
+        }
+
+        private void buttonAuto2_Click(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            if (_switch.GetSwitch((short)enumSwitch.AutoCh2))
+            {
+                _switch.SetSwitch((short)enumSwitch.AutoCh2, false);
+                buttonAuto2.Image = global::EnvironmentPlot.Properties.Resources.Off;
+                _switch.SetSwitchValue((short)enumSwitch.PowerCh2, (double)numericUpDownChannel2.Value);
+            }
+            else
+            {
+                _switch.SetSwitch((short)enumSwitch.AutoCh2, true);
+                buttonAuto2.Image = global::EnvironmentPlot.Properties.Resources.On;
+            }
+        }
+
+        private void numericUpDownChannel2_ValueChanged(object sender, EventArgs e)
+        {
+            if (!_switcheReady) return;
+            if (!_switch.Connected) return;
+
+            _switch.SetSwitchValue((short)enumSwitch.PowerCh2, (double)numericUpDownChannel2.Value);
+        }
     }
 }

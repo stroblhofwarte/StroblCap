@@ -185,10 +185,11 @@ namespace ASCOM.StroblCap
                 try
                 {
                     string test = Path.GetTempPath() + filename;
+                    long timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                     using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
                         StreamWriter wr = new StreamWriter(fs);
-                        wr.WriteLine(temp.ToString(CultureInfo.InvariantCulture) + ";" + hum.ToString(CultureInfo.InvariantCulture) + ";" + dew.ToString(CultureInfo.InvariantCulture));
+                        wr.WriteLine(temp.ToString(CultureInfo.InvariantCulture) + ";" + hum.ToString(CultureInfo.InvariantCulture) + ";" + dew.ToString(CultureInfo.InvariantCulture) + ";" + timestamp.ToString());
                         wr.Close();
                         fs.Close();
                     }

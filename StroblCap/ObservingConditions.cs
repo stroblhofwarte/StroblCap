@@ -77,15 +77,14 @@ namespace ASCOM.StroblCap
         internal double channle1Temp;
         internal double channle1Hum;
         internal double channle1Dew;
+        internal long channel1timestamp;
 
         internal double channle2Temp;
         internal double channle2Hum;
         internal double channle2Dew;
+        internal long channel2timestamp;
 
         private static System.Timers.Timer _readbackTimer;
-        private static System.Timers.Timer _tickerTimer;
-
-        internal int timeElapsed = 0;
 
         /// <summary>
         /// Private variable to hold the connected state
@@ -129,44 +128,33 @@ namespace ASCOM.StroblCap
             _readbackTimer.AutoReset = true;
             _readbackTimer.Enabled = true;
 
-            _tickerTimer = new System.Timers.Timer(1000);
-            _tickerTimer.Elapsed += _tickerTimer_Elapsed;
-            _tickerTimer.AutoReset = true;
-            _tickerTimer.Enabled = true;
-
-            
             tl.LogMessage("ObservingConditions", "Completed initialisation");
         }
 
         private void _readbackTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             if (!connectedState) return;
-            ReadSensorFile(Switch.sensor1File, out channle1Temp, out channle1Hum, out channle1Dew);
-            ReadSensorFile(Switch.sensor2File, out channle2Temp, out channle2Hum, out channle2Dew);
+            ReadSensorFile(Switch.sensor1File, out channle1Temp, out channle1Hum, out channle1Dew, out channel1timestamp);
+            ReadSensorFile(Switch.sensor2File, out channle2Temp, out channle2Hum, out channle2Dew, out channel2timestamp);
         }
 
-        private void _tickerTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            if (!connectedState) return;
-            timeElapsed++;
-        }
-        private void ReadSensorFile(string filename, out double temp, out double hum, out double dew)
+        private void ReadSensorFile(string filename, out double temp, out double hum, out double dew, out long timestamp)
         {
             temp = 0.0;
             hum = 0.0;
             dew = 0.0;
+            timestamp = 0;
             int retry = 5;
             while (true)
             {
                 try
                 {
-                    string test = Path.GetTempPath() + filename;
                     using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Open, FileAccess.Read, FileShare.None))
                     {
                         StreamReader rd = new StreamReader(fs);
                         string line = rd.ReadLine();
                         string[] vals = line.Split(';');
-                        if(vals.Length == 3)
+                        if(vals.Length == 4)
                         {
                             try
                             {
@@ -194,6 +182,15 @@ namespace ASCOM.StroblCap
                             catch (Exception ex)
                             {
                                 dew = 0.0;
+                            }
+                            try
+                            {
+                                timestamp = long.Parse(vals[3], CultureInfo.InvariantCulture);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                timestamp = 0;
                             }
                         }
                         rd.Close();
@@ -608,7 +605,17 @@ namespace ASCOM.StroblCap
                     case "humidity":
                     case "dewpoint":
                     case "temperature":
-                        return (double)timeElapsed;
+                        if(channel1forWeather)
+                        {
+                            long nowTimeStapm = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                            return (double)(nowTimeStapm - channel1timestamp);
+                        }
+                        if (channel2forWeather)
+                        {
+                            long nowTimeStapm = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                            return (double)(nowTimeStapm - channel1timestamp);
+                        }
+                        return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                     case "averageperiod":
                     case "pressure":
                     case "rainrate":
