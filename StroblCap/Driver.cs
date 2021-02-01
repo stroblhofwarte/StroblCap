@@ -7,7 +7,7 @@
 //              It supports two enwironment sensors for Channel 1 and Channel 2. One of 
 //              this sensors can be used as weather sensor.
 //
-// Implements:	ASCOM Switch interface version: 1.0
+// Implements:	ASCOM Switch interface version: 2.0
 // Author:		Othmar Ehrhardt, <othmar.ehrhardt@t-online.de>, https://astro.stroblhof-oberrohrbach.de
 //
 // Edit Log:
@@ -356,7 +356,6 @@ namespace ASCOM.StroblCap
 
         public string Description
         {
-            // TODO customise this device description
             get
             {
                 tl.LogMessage("Description Get", driverDescription);
