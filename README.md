@@ -66,15 +66,8 @@ The general command format is "cmd:", the response to a command is always postfi
 
 # EnvironmentPlot Application
 
-DEPRICATED: The environment values are now in the ASCOM client!
-
-The EnvironmentPlot application catch via the COM port in parallel to the ASCOM driver the values for temperature, 
-dewpoint, humidity and the power setting for channel 1 and 2. At first startup it is only a small minimized window in 
-the upper left corner. Place this app where you want to have it on the screen and the size you need. 
-This position and size will be stored for the next startup. Do not forgett to set the COM port of the StroblCap device!
+The EnvironmentPlot application is a ASCOM client for the StroblCap device. This application can be used when your 
+astronomy software does not support ASCOM switch devices like SGP < 4.0.
 
 ![Screenshot of running StroblCap controller and N.I.N.A.](https://github.com/stroblhofwarte/StroblCap/blob/main/StroblCap_Screenshot.png)
-
-Screenshot where the EnvironmentPlot is running on the bottom part of the screen. A BME280 sensor is connected only for channel 1, the second channel send always zero for all values because there is no sensor. The app will not show this values! The N.I.N.A. application is running in parallel to control the settings 
-of the StroblCap device.
 
