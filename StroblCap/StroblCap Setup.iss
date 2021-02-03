@@ -34,7 +34,7 @@ Name: "{cf}\ASCOM\Uninstall\Switch\StroblCap"
 ; TODO: Add subfolders below {app} as needed (e.g. Name: "{app}\MyFolder")
 
 [Files]
-Source: "C:\_develop\StroblCap\StroblCap\bin\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}"
+Source: "C:\_develop\StroblCap\StroblCap\bin\x86\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}\x86"
 Source: "C:\_develop\StroblCap\StroblCap\bin\x64\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}\x64"
 
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
@@ -50,7 +50,7 @@ Name: "{userdesktop}\EnvironmentPlot"; Filename: "{app}\EnvironmentPlot\Environm
 ; Only if driver is .NET
 [Run]
 ; Only for .NET assembly/in-proc drivers
-Filename: "{dotnet4032}\regasm.exe"; Parameters: "/codebase ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
+Filename: "{dotnet4032}\regasm.exe"; Parameters: "/codebase ""{app}\x86\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
 Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\x64\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
 
 
@@ -59,10 +59,11 @@ Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\x64\ASCOM.St
 ; Only if driver is .NET
 [UninstallRun]
 ; Only for .NET assembly/in-proc drivers
-Filename: "{dotnet4032}\regasm.exe"; Parameters: "-u ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
+Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\x86\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
+Filename: "{dotnet4032}\regasm.exe"; Parameters: "-u ""{app}\x86\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
 ; This helps to give a clean uninstall
-Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
-Filename: "{dotnet4064}\regasm.exe"; Parameters: "-u ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
+Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\x64\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
+Filename: "{dotnet4064}\regasm.exe"; Parameters: "-u ""{app}\x64\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
 
 
 
