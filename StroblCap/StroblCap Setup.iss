@@ -35,13 +35,14 @@ Name: "{cf}\ASCOM\Uninstall\Switch\StroblCap"
 
 [Files]
 Source: "C:\_develop\StroblCap\StroblCap\bin\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}"
+Source: "C:\_develop\StroblCap\StroblCap\bin\x64\Release\ASCOM.StroblCap.Switch.dll"; DestDir: "{app}\x64"
 
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
 Source: "C:\_develop\StroblCap\StroblCap\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
 
 Source: "C:\_develop\StroblCap\StroblCap\Icons\water_drop_1.ico"; DestDir: "{app}\EnvironmentPlot"
-Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\Release\EnvironmentPlot.exe"; DestDir: "{app}\EnvironmentPlot"
-Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\Release\EnvironmentPlot.exe.config"; DestDir: "{app}\EnvironmentPlot"
+Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\x64\Release\EnvironmentPlot.exe"; DestDir: "{app}\EnvironmentPlot"
+Source: "C:\_develop\StroblCap\EnvironmentPlot\bin\x64\Release\EnvironmentPlot.exe.config"; DestDir: "{app}\EnvironmentPlot"
 
 [Icons]
 Name: "{userdesktop}\EnvironmentPlot"; Filename: "{app}\EnvironmentPlot\EnvironmentPlot.exe"; IconFilename: "{app}\EnvironmentPlot\water_drop_1.ico"
@@ -50,7 +51,7 @@ Name: "{userdesktop}\EnvironmentPlot"; Filename: "{app}\EnvironmentPlot\Environm
 [Run]
 ; Only for .NET assembly/in-proc drivers
 Filename: "{dotnet4032}\regasm.exe"; Parameters: "/codebase ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 32bit
-Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
+Filename: "{dotnet4064}\regasm.exe"; Parameters: "/codebase ""{app}\x64\ASCOM.StroblCap.Switch.dll"""; Flags: runhidden 64bit; Check: IsWin64
 
 
 
