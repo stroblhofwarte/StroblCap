@@ -5,13 +5,13 @@
 [Setup]
 AppID={{87015713-225d-47ee-a567-b444e1c1c0e9}
 AppName=ASCOM StroblCap Switch Driver
-AppVerName=ASCOM StroblCap Switch Driver 1.1.0
-AppVersion=1.1.0
+AppVerName=ASCOM StroblCap Switch Driver 1.1.1
+AppVersion=1.1.1
 AppPublisher=Othmar Ehrhardt <othmar.ehrhardt@t-online.de>
 AppPublisherURL=mailto:othmar.ehrhardt@t-online.de
 AppSupportURL=https://ascomtalk.groups.io/g/Help
 AppUpdatesURL=https://ascom-standards.org/
-VersionInfoVersion=1.1.0
+VersionInfoVersion=1.1.1
 MinVersion=6.1.7601
 DefaultDirName="{cf}\ASCOM\Switch"
 DisableDirPage=yes

@@ -296,12 +296,23 @@ namespace ASCOM.StroblCap
         {
             lock (_lock)
             {
-                _serial.Transmit("ID:");
-                string ret = _serial.ReceiveTerminated("#");
-
-                if (ret == "STROBLCAP#")
-                    return true;
-                return false;
+                string idString = String.Empty;
+                int retry = 3;
+                while (idString != "STROBLCAP#")
+                {
+                    try
+                    {
+                        _serial.Transmit("ID:");
+                        idString = _serial.ReceiveTerminated("#");
+                    }
+                    catch (Exception ex)
+                    {
+                        retry--;
+                        if (retry == 0) return false;
+                        continue;
+                    }
+                }
+                return true;
             }
         }
         public bool Connected
@@ -400,7 +411,7 @@ namespace ASCOM.StroblCap
         {
             get
             {
-                string name = "Short driver name - please customise";
+                string name = "StroblCap Dew Controller";
                 tl.LogMessage("Name Get", name);
                 return name;
             }
@@ -599,7 +610,6 @@ namespace ASCOM.StroblCap
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private double test = 0.0;
         public double GetSwitchValue(short id)
         {
             Validate("GetSwitchValue", id);
