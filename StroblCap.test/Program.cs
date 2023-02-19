@@ -44,6 +44,13 @@ namespace ASCOM
             // TODO add more code to test the driver.
             device.Connected = true;
 
+          
+            int max = device.MaxSwitch;
+            for(int i = 0; i < max; i++)
+            {
+                string name = device.GetSwitchDescription((short)i);
+                
+            }
             while (true)
                 Thread.Sleep(100);
             device.Connected = false;

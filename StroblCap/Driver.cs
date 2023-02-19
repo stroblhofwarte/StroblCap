@@ -76,6 +76,11 @@ namespace ASCOM.StroblCap
 
         internal static string traceStateProfileName = "Trace Level";
         internal static string traceStateDefault = "false";
+
+        internal static string UseThermistorName = "Use Dewring Thermistor";
+        internal static string UseThermistorDefault = "false";
+
+
         internal static string comPortProfileName = "COM Port"; // Constants used for Profile persistence
         internal static string comPortDefault = "COM1";
         private Switches _switches;
@@ -119,7 +124,10 @@ namespace ASCOM.StroblCap
             tl = new TraceLogger("", "StroblCap");
             _switches = new Switches(tl);
             _switches.Load();
-
+            if(_switches.UseThermistor)
+            {
+                _switches.Get((int)Switches.enumSwitch.TempCh1).Description = "from Thermistor";
+            }
             tl.LogMessage("Switch", "Starting initialisation");
 
             connectedState = false; // Initialise connected to false
@@ -139,19 +147,42 @@ namespace ASCOM.StroblCap
         private void _readbackTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             if (!connectedState) return;
-            lock(_lock)
+            lock (_lock)
             {
+                double thermistor = 0.0;
+                if (_switches.UseThermistor)
+                {
+                    _serial.Transmit("T:");
+                    String retTh = _serial.ReceiveTerminated("#").Replace("#", "");
+                    thermistor = (double)((double)Int32.Parse(retTh) / 100.0);
+                }
                 _serial.Transmit("G1:");
                 String ret = _serial.ReceiveTerminated("#");
                 String[] values = ret.Split(';');
-                double tempCh1 = (double)((double)Int32.Parse(values[0]) / 100.0);
-                double humCh1 = (double)((double)Int32.Parse(values[1]) / 100.0);
-                double dewCh1 = (double)((double)Int32.Parse(values[2]) / 100.0);
-                WriteSensorFile(sensor1File, tempCh1, humCh1, dewCh1);
-
-                _switches.Get((int)Switches.enumSwitch.TempCh1).Value = ((double)Int32.Parse(values[0]) / 100.0).ToString(CultureInfo.InvariantCulture);
-                _switches.Get((int)Switches.enumSwitch.HumCh1).Value = ((double)Int32.Parse(values[1]) / 100.0).ToString(CultureInfo.InvariantCulture);
-                _switches.Get((int)Switches.enumSwitch.DewCh1).Value = ((double)Int32.Parse(values[2]) / 100.0).ToString(CultureInfo.InvariantCulture);
+                // Replace sensor temp with thermistor temp when connected and
+                // set the other values to -255:
+                if (_switches.UseThermistor)
+                {
+                    double tempCh1 = thermistor;
+                    // Use values from ch1 sensor for hum and dew:
+                    double humCh1 = (double)((double)Int32.Parse(values[1]) / 100.0);
+                    double dewCh1 = (double)((double)Int32.Parse(values[2]) / 100.0);
+                    double sensorTemp = (double)((double)Int32.Parse(values[0]) / 100.0);
+                    _switches.Get((int)Switches.enumSwitch.TempCh1).Value = (tempCh1).ToString(CultureInfo.InvariantCulture);
+                    _switches.Get((int)Switches.enumSwitch.HumCh1).Value = (humCh1).ToString(CultureInfo.InvariantCulture);
+                    _switches.Get((int)Switches.enumSwitch.DewCh1).Value = (dewCh1).ToString(CultureInfo.InvariantCulture);
+                    WriteSensorFile(sensor1File, sensorTemp, humCh1, dewCh1);
+                }
+                else
+                {
+                    double tempCh1 = (double)((double)Int32.Parse(values[0]) / 100.0);
+                    double humCh1 = (double)((double)Int32.Parse(values[1]) / 100.0);
+                    double dewCh1 = (double)((double)Int32.Parse(values[2]) / 100.0);
+                    _switches.Get((int)Switches.enumSwitch.TempCh1).Value = (tempCh1).ToString(CultureInfo.InvariantCulture);
+                    _switches.Get((int)Switches.enumSwitch.HumCh1).Value = (humCh1).ToString(CultureInfo.InvariantCulture);
+                    _switches.Get((int)Switches.enumSwitch.DewCh1).Value = (dewCh1).ToString(CultureInfo.InvariantCulture);
+                    WriteSensorFile(sensor1File, tempCh1, humCh1, dewCh1);
+                }
 
                 _serial.Transmit("G2:");
                 ret = _serial.ReceiveTerminated("#");
@@ -159,46 +190,66 @@ namespace ASCOM.StroblCap
                 double tempCh2 = (double)(double)(Int32.Parse(values[0]) / 100.0);
                 double humCh2 = (double)((double)Int32.Parse(values[1]) / 100.0);
                 double dewCh2 = (double)((double)Int32.Parse(values[2]) / 100.0);
-                WriteSensorFile(sensor2File, tempCh2, humCh2, dewCh2);
 
                 _switches.Get((int)Switches.enumSwitch.TempCh2).Value = ((double)Int32.Parse(values[0]) / 100.0).ToString(CultureInfo.InvariantCulture);
                 _switches.Get((int)Switches.enumSwitch.HumCh2).Value = ((double)Int32.Parse(values[1]) / 100.0).ToString(CultureInfo.InvariantCulture);
                 _switches.Get((int)Switches.enumSwitch.DewCh2).Value = ((double)Int32.Parse(values[2]) / 100.0).ToString(CultureInfo.InvariantCulture);
-
-                _serial.Transmit("P1:");
-                ret = _serial.ReceiveTerminated("#");
-                _switches.Get((int)Switches.enumSwitch.PwrCh1).Value = ret.Replace("#", "");
-
-                _serial.Transmit("P2:");
-                ret = _serial.ReceiveTerminated("#");
-                _switches.Get((int)Switches.enumSwitch.PwrCh2).Value = ret.Replace("#", "");
+                WriteSensorFile(sensor2File, tempCh2, humCh2, dewCh2);
 
 
-            }
-        }
-
-        private void WriteSensorFile(string filename, double temp, double hum, double dew)
-        {
-            int retry = 5;
-            while (true)
-            {
-                try
+                // Check if automatic regulation ius enabled:
+                if (_switches.Get((int)Switches.enumSwitch.AutoCh1).Value == "true")
                 {
-                    string test = Path.GetTempPath() + filename;
-                    long timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-                    using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Create, FileAccess.Write, FileShare.None))
+                    try
                     {
-                        StreamWriter wr = new StreamWriter(fs);
-                        wr.WriteLine(temp.ToString(CultureInfo.InvariantCulture) + ";" + hum.ToString(CultureInfo.InvariantCulture) + ";" + dew.ToString(CultureInfo.InvariantCulture) + ";" + timestamp.ToString());
-                        wr.Close();
-                        fs.Close();
+                        double goal = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.dTCh1).Value, CultureInfo.InvariantCulture);
+                        double dew = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.DewCh1).Value, CultureInfo.InvariantCulture);
+                        double temp = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.TempCh1).Value, CultureInfo.InvariantCulture);
+
+                        if (temp < (dew + goal) - 2)
+                        {
+                            _serial.Transmit("E1:");
+                            _serial.ReceiveTerminated("#");
+                            _switches.Get((int)Switches.enumSwitch.OnOffCh1).Value = "true";
+                        }
+                        else if (temp > (dew + goal))
+                        {
+                            _serial.Transmit("D1:");
+                            _serial.ReceiveTerminated("#");
+                            _switches.Get((int)Switches.enumSwitch.OnOffCh1).Value = "false";
+                        }
                     }
-                } catch (Exception ex)
-                {
-                    retry--;
-                    continue;
+                    catch (Exception ex)
+                    {
+                        // Goal value could not be readed. Stall!
+                    }
                 }
-                break;
+                if (_switches.Get((int)Switches.enumSwitch.AutoCh2).Value == "true")
+                {
+                    try
+                    {
+                        double goal = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.dTCh2).Value, CultureInfo.InvariantCulture);
+                        double dew = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.DewCh2).Value, CultureInfo.InvariantCulture);
+                        double temp = Convert.ToDouble(_switches.Get((int)Switches.enumSwitch.TempCh2).Value, CultureInfo.InvariantCulture);
+
+                        if (temp < (dew + goal) - 2)
+                        {
+                            _serial.Transmit("E2:");
+                            _serial.ReceiveTerminated("#");
+                            _switches.Get((int)Switches.enumSwitch.OnOffCh2).Value = "true";
+                        }
+                        else if (temp > (dew + goal))
+                        {
+                            _serial.Transmit("D2:");
+                            _serial.ReceiveTerminated("#");
+                            _switches.Get((int)Switches.enumSwitch.OnOffCh2).Value = "false";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Goal value could not be readed. Stall!
+                    }
+                }
             }
         }
 
@@ -359,6 +410,10 @@ namespace ASCOM.StroblCap
                 }
                 else
                 {
+                    _serial.Transmit("D1:");
+                    _serial.ReceiveTerminated("#");
+                    _serial.Transmit("D2:");
+                    _serial.ReceiveTerminated("#");
                     connectedState = false;
                     LogMessage("Connected Set", "Disconnecting from adress {0}", _switches.ComPort);
                 }
@@ -419,6 +474,32 @@ namespace ASCOM.StroblCap
 
         #endregion
 
+        private void WriteSensorFile(string filename, double temp, double hum, double dew)
+        {
+            int retry = 5;
+            while (true)
+            {
+                try
+                {
+                    string test = Path.GetTempPath() + filename;
+                    long timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                    using (FileStream fs = new FileStream(Path.GetTempPath() + filename, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        StreamWriter wr = new StreamWriter(fs);
+                        wr.WriteLine(temp.ToString(CultureInfo.InvariantCulture) + ";" + hum.ToString(CultureInfo.InvariantCulture) + ";" + dew.ToString(CultureInfo.InvariantCulture) + ";" + timestamp.ToString());
+                        wr.Close();
+                        fs.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    retry--;
+                    continue;
+                }
+                break;
+            }
+        }
+
         #region ISwitchV2 Implementation
 
 
@@ -456,7 +537,7 @@ namespace ASCOM.StroblCap
         public void SetSwitchName(short id, string name)
         {
             Validate("SetSwitchName", id);
-            tl.LogMessage("SetSwitchName", string.Format("SetSwitchName({0}) = {1} - not implemented", id, name));
+            tl.LogMessage("SetSwitchName", string.Format("SetSwitchName({0}) = {1}", id, name));
             _switches.Get(id).Name = name;
         }
 
@@ -539,11 +620,26 @@ namespace ASCOM.StroblCap
             else if (val && sw == (int)Switches.enumSwitch.OnOffCh2) cmd = "E2:";
             else if (!val && sw == (int)Switches.enumSwitch.OnOffCh1) cmd = "D1:";
             else if (!val && sw == (int)Switches.enumSwitch.OnOffCh2) cmd = "D2:";
-
-            else if (val && sw == (int)Switches.enumSwitch.AutoCh1) cmd = "A1:";
-            else if (val && sw == (int)Switches.enumSwitch.AutoCh2) cmd = "A2:";
-            else if (!val && sw == (int)Switches.enumSwitch.AutoCh1) cmd = "M1:";
-            else if (!val && sw == (int)Switches.enumSwitch.AutoCh2) cmd = "M2:";
+            else if (val && sw == (int)Switches.enumSwitch.AutoCh1)
+            {
+                _switches.Get(sw).Value = "true";
+                return;
+            }
+            else if (val && sw == (int)Switches.enumSwitch.AutoCh2)
+            {
+                _switches.Get(sw).Value = "true";
+                return;
+            }
+            else if (!val && sw == (int)Switches.enumSwitch.AutoCh1)
+            {
+                _switches.Get(sw).Value = "false";
+                return;
+            }
+            else if (!val && sw == (int)Switches.enumSwitch.AutoCh2)
+            {
+                _switches.Get(sw).Value = "false";
+                return;
+            }
             else return;
             lock (_lock)
             {
@@ -573,7 +669,7 @@ namespace ASCOM.StroblCap
         public double MaxSwitchValue(short id)
         {
             Validate("MaxSwitchValue", id);
-            return 100;
+            return 40;
            
         }
 
@@ -615,6 +711,7 @@ namespace ASCOM.StroblCap
             Validate("GetSwitchValue", id);
             if (_switches.Get(id).SwType == SwitchObj.enumSwitchType.dio)
                 throw new MethodNotImplementedException("GetSwitchValue");
+            if (_switches.Get(id).Value == "-255") throw new MethodNotImplementedException("GetSwitchValue");
             return double.Parse(_switches.Get(id).Value);
         }
 
@@ -647,13 +744,15 @@ namespace ASCOM.StroblCap
 
             int intVal = (int)val;
 
-            if (sw == (int)Switches.enumSwitch.PowerCh1)
+            if (sw == (int)Switches.enumSwitch.dTCh1)
             {
-                cmd = "S1" + intVal.ToString("D3") + ":";
+                _switches.Get(sw).Value = val.ToString();
+                return;
             }
-            else if (sw == (int)Switches.enumSwitch.PowerCh2)
+            else if (sw == (int)Switches.enumSwitch.dTCh2)
             {
-                cmd = "S2" + intVal.ToString("D3") + ":";
+                _switches.Get(sw).Value = val.ToString();
+                return;
             }
             else return;
 
@@ -682,8 +781,8 @@ namespace ASCOM.StroblCap
             SetSwitch((int)Switches.enumSwitch.AutoCh2, bool.Parse(Switches.Get((int)Switches.enumSwitch.AutoCh2).Value));
             SetSwitch((int)Switches.enumSwitch.OnOffCh2, bool.Parse(Switches.Get((int)Switches.enumSwitch.OnOffCh2).Value));
 
-            SetSwitchValue((int)Switches.enumSwitch.PowerCh1, double.Parse(Switches.Get((int)Switches.enumSwitch.PowerCh1).Value, CultureInfo.InvariantCulture));
-            SetSwitchValue((int)Switches.enumSwitch.PowerCh2, double.Parse(Switches.Get((int)Switches.enumSwitch.PowerCh2).Value, CultureInfo.InvariantCulture));
+            SetSwitchValue((int)Switches.enumSwitch.dTCh1, double.Parse(Switches.Get((int)Switches.enumSwitch.dTCh1).Value, CultureInfo.InvariantCulture));
+            SetSwitchValue((int)Switches.enumSwitch.dTCh2, double.Parse(Switches.Get((int)Switches.enumSwitch.dTCh2).Value, CultureInfo.InvariantCulture));
 
 
         }

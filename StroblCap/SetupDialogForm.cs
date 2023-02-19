@@ -32,46 +32,7 @@ namespace ASCOM.StroblCap
             // Place any validation constraint checks here
             // Update the state variables with results from the dialogue
             _driver.Switches.ComPort = (string)comboBoxComPort.SelectedItem;
-
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Name = textBoxName1.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Name = textBoxName2.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh1).Name = textBoxName1.Text + " Activation";
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh2).Name = textBoxName2.Text + " Activation";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh1).Name = textBoxName1.Text + " Auto";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh2).Name = textBoxName2.Text + " Auto";
-            _driver.Switches.Get((int)Switches.enumSwitch.TempCh1).Name = textBoxName1.Text + " Temp.";
-            _driver.Switches.Get((int)Switches.enumSwitch.HumCh1).Name = textBoxName1.Text + " Humidity";
-            _driver.Switches.Get((int)Switches.enumSwitch.DewCh1).Name = textBoxName1.Text + " Dewpoint";
-            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh1).Name = textBoxName1.Text + " Power";
-
-            _driver.Switches.Get((int)Switches.enumSwitch.TempCh2).Name = textBoxName2.Text + " Temp.";
-            _driver.Switches.Get((int)Switches.enumSwitch.HumCh2).Name = textBoxName2.Text + " Humidity";
-            _driver.Switches.Get((int)Switches.enumSwitch.DewCh2).Name = textBoxName2.Text + " Dewpoint";
-            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh2).Name = textBoxName2.Text + " Power";
-
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Description = textBoxDesc1.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Description = textBoxDesc2.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh1).Description = "Activation of the " + textBoxName1.Text + " Channel at all";
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh2).Description = "Activation of the " + textBoxName2.Text + " Channel at all";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh1).Description = "Use environmental sensor to control the " + textBoxName1.Text + "Channel";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh2).Description = "Use environmental sensor to control the " + textBoxName2.Text + "Channel";
-            _driver.Switches.Get((int)Switches.enumSwitch.TempCh1).Description = "Temperature in °C";
-            _driver.Switches.Get((int)Switches.enumSwitch.HumCh1).Description = "Humidity in %";
-            _driver.Switches.Get((int)Switches.enumSwitch.DewCh1).Description = "Dewpoint in °C";
-            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh1).Description = "Powersetting in %";
-
-            _driver.Switches.Get((int)Switches.enumSwitch.TempCh2).Description = "Temperature in °C";
-            _driver.Switches.Get((int)Switches.enumSwitch.HumCh2).Description = "Humidity in %";
-            _driver.Switches.Get((int)Switches.enumSwitch.DewCh2).Description = "Dewpoint in °C";
-            _driver.Switches.Get((int)Switches.enumSwitch.PwrCh2).Description = "Powersetting in %";
-
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Value = textBoxDefault1.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Value = textBoxDefault2.Text;
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh1).Value = "true";
-            _driver.Switches.Get((int)Switches.enumSwitch.OnOffCh2).Value = "true";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh1).Value = "true";
-            _driver.Switches.Get((int)Switches.enumSwitch.AutoCh2).Value = "true";
-
+            _driver.Switches.UseThermistor = checkBoxThermistor.Checked;
             tl.Enabled = chkTrace.Checked;
         }
 
@@ -100,6 +61,7 @@ namespace ASCOM.StroblCap
         private void InitUI()
         {
             chkTrace.Checked = tl.Enabled;
+            checkBoxThermistor.Checked = _driver.Switches.UseThermistor;
             // set the list of com ports to those that are currently available
             comboBoxComPort.Items.Clear();
             comboBoxComPort.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());      // use System.IO because it's static
@@ -108,18 +70,6 @@ namespace ASCOM.StroblCap
             {
                 comboBoxComPort.SelectedItem = _driver.Switches.ComPort;
             }
-
-            textBoxName1.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Name;
-            textBoxName2.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Name;
-
-
-            textBoxDesc1.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Description;
-            textBoxDesc2.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Description;
-
-            textBoxDefault1.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh1).Value;
-            textBoxDefault2.Text = _driver.Switches.Get((int)Switches.enumSwitch.PowerCh2).Value;
-
-
 
         }
     }

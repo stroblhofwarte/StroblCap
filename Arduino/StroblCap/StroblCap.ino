@@ -26,16 +26,10 @@
  * 
  * Commands (colon is part of the command):
  * ID:            Sent back the device type id with STROBLCAP#
- * S1nnn:         Set power for channel 1 to nnn, where nnn is 000 - 100 [%]
- * S2nnn:         Set power for channel 2 to nnn, return 1# when set, otherwise 0# or nothing.
  * E1:            Enable channel 1. 1# if ok.
  * E2:            Enable channel 2. 1# if ok.
  * D1:            Disable channel 1
  * D2:            Disable channel 2
- * A1:            Set channel 1 to automatic mode. 1# 
- * A2:            Set channel 2 to automatic mode. 1# 
- * M1:            Set channel 1 to manual mode.
- * M2:            Set channel 2 to manual mode.
  * G1:            Get sensor data channel 1: "t;h;d;p#", where
  *                            t: Temperature * 100,
  *                            h: Humidity * 100,
@@ -46,9 +40,17 @@
  *                            h: Humidity * 100,
  *                            d: Dewpoint * 100,
  *                            p: Pressure * 10
- * P1:            Get power value channel 1, nnn#
- * P2:            Get power value channel 2, nnn#
+ * T:             Get thermistor temp: "t#", where
+ *                            t: Temperature * 100
+ * TN:            Set nominal value of the thermistor [*1, Ohm]
+ * TT:            Set nominal temperature of the thermistor [*1, °C]
+ * TC:            Set thermistor beta coeffizient [*1]
+ * 
+ * Thermistor: Temp of dew heater 1
+ * Sensor Ch1: Temp of dew heater 2
+ * Sensor Ch2: Outside temp and humifdity
  */
+
 
 #include <ESP8266WiFi.h>
 #include <pins_arduino.h>
@@ -58,11 +60,12 @@
 #include <Adafruit_BME280.h>
 #include <strings.h>
 
+#define DEBUG 1
+
 // Hardware settings
 int CHANNEL1 = D5;
 int CHANNEL2 = D6;
-
-double pwmFactor = PWMRANGE / 100.0;
+int THERMISTOR = A0;
 
 Adafruit_BME280 bmeCh1; // I2C
 Adafruit_BME280 bmeCh2; // I2C
@@ -74,14 +77,12 @@ bool bme280_ch2active = false;
 const String Channel1 = "ch1";
 const String Channel2 = "ch2";
 
-
-int pwm1 = 100.0;
-int pwm2 = 100.0;
 int ch1OnOff = 1;
 int ch2OnOff = 1;
-int ch1Auto = 0;
-int ch2Auto = 0;
 
+int thermistorNominal = 10000;
+int thermistorTempNominal = 25;
+int bCoefficient = 3977;
 unsigned long timestamp;
 
 int serialDataReady = 0;
@@ -89,12 +90,16 @@ String serialData;
 String serBuf;
 
 void setup() {
+  
   WiFi.forceSleepBegin();
   // put your setup code here, to run once:
   Serial.begin(115200);
-  analogWriteFreq(1000);
+  //analogWriteFreq(1000);
   pinMode(CHANNEL1,OUTPUT);
+  digitalWrite(CHANNEL1,LOW);
   pinMode(CHANNEL2,OUTPUT);
+  digitalWrite(CHANNEL2,LOW);
+  pinMode(THERMISTOR, INPUT); 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
   serBuf = "";
@@ -106,14 +111,12 @@ void setup() {
   if (bmeCh1.begin(bme280_ch1addr, &Wire))
   {
     bme280_ch1active = true;
-    ch1Auto = 1;
   }
+  
   if (bmeCh2.begin(bme280_ch2addr, &Wire))
   {
     bme280_ch2active = true;
-    ch2Auto = 1;
   }
-
     
   //set led pin as output
   pinMode(BUILTIN_LED, INPUT);
@@ -153,91 +156,60 @@ double DewPoint(double temp, double humidity)
   return td;
 }
 
-void EnvironmentReadout(Adafruit_BME280 bme, String ch)
-{
-  double temp = bme.readTemperature();
-  double hum = bme.readHumidity();
-  double pres = bme.readPressure() / 100.0F;
-  double dew = DewPoint(temp, hum);
-
-  if(ch == Channel1) SetPower(ch, temp, dew);
-  if(ch == Channel2) SetPower(ch, temp, dew);
-}
-
-double dewPointDiff = 5.0;
-
-double KpCh1 = 50;
-double KiCh1 = 0.01;
-double outICh1 = 0.0;
-
-double KpCh2 = 50;
-double KiCh2 = 0.01;
-double outICh2 = 0.0;
-
-double PID(double soll, double ist, double Kp, double Ki, double *outI)
-{
-  // To avoid unwanted behavior, make sure the "ist" value will never be negative.
-  //if(ist < 0) ist = 0;
-  double outP = (soll - ist ) * Kp;
-  *outI += (soll - ist) * Ki;   // Ki = 0,2
-  if(*outI < 0.0) *outI = 0.0;
-  double out = outP + *outI;
-  return out;
-}
-
-void SetPower(String ch, double temp, double dewpoint)
+void EnvironmentReadout(String ch)
 {
   if(ch == Channel1)
   {
-    char payload[2];
-    if(!ch1OnOff)
-    {
-
-    }
-    else
-    {
-      if(ch1Auto)
-      {
-        double out = PID(dewPointDiff, temp-dewpoint, KpCh1, KiCh1, &outICh1);
-        if(out > 100.0) out = 100.0;
-        if(out < 0.0) out = -out;
-        if(out < -100.0) out = 100.0;
-        pwm1 = (int)out;
-      }
-    }
+    double temp = bmeCh1.readTemperature();
+    double hum = bmeCh1.readHumidity();
+    double pres = bmeCh1.readPressure() / 100.0F;
+    double dew = DewPoint(temp, hum);
+    double thermistorTemp = ThermistorReadout();
   }
-
   if(ch == Channel2)
   {
-    char payload[2];
-    if(!ch2OnOff)
-    {
-      
-    }
-    else
-    {
-      if(ch2Auto)
-      {
-        double out = PID(dewPointDiff, temp-dewpoint, KpCh2, KiCh2, &outICh2);
-        if(out > 100.0) out = 100.0;
-        if(out < 0.0) out = -out;
-        if(out < -100.0) out = 100.0;
-        pwm2 = (int)out;
-      }
-    }
+    double temp = bmeCh2.readTemperature();
+    double hum = bmeCh2.readHumidity();
+    double pres = bmeCh2.readPressure() / 100.0F;
+    double dew = DewPoint(temp, hum);
   }
 }
 
-void SetPwmOnChannel()
+// Thermistor calculation taken from http://www.scynd.de/tutorials/arduino-tutorials/5-sensoren/5-1-temperatur-mit-10k%CF%89-ntc.html
+#define VALUES 5
+#define FIXED_RESISTOR 10000 // in Ohm
+double ThermistorReadout()
 {
-  int localPwm1 = (int)((double)pwm1 * pwmFactor);
-  int localPwm2 = (int)((double)pwm2 * pwmFactor);
-  
-  if(!ch1OnOff) localPwm1 = 0;
-  analogWrite(CHANNEL1, localPwm1);
-  if(!ch2OnOff) localPwm2 = 0;
-  analogWrite(CHANNEL2, localPwm2); 
+  int values[VALUES];   
+  for (int i=0; i < VALUES; i++)
+  {
+    values[i] = analogRead(THERMISTOR);
+    delay(10);
+  }
+   
+  // Average all values:
+  int average = 0;
+  for (int i=0; i < VALUES; i++)
+  {
+    average += values[i];
+  }
+  average /= VALUES;
+
+  // Calculate resitance in ohm
+  double r =  (double)FIXED_RESISTOR *((1023.0 / (double)average ) - 1.0);
+
+  // Steinhard calculation
+  double temp = r / (double)thermistorNominal;      // (R/Ro)
+  temp = log(temp);                               // ln(R/Ro)
+  temp /= (double)bCoefficient;                           // 1/B * ln(R/Ro)
+  temp += 1.0 / ((double)thermistorTempNominal + 273.15); // + (1/To)
+  temp = 1.0 / temp;                              // invert
+  temp -= 273.15;                                 // to °C
+  return temp;
 }
+
+double agres1 = 1;
+double agres2 = 1;
 
 void Greeting()
 {
@@ -252,42 +224,82 @@ void VisualAck()
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
-void Cmd_S(String data, int ch)
+long Extract(String cmdid, String cmdstring)
 {
-  String value = data.substring(2,5);
-  if(ch == 1) pwm1 = value.toInt();
-  else if(ch == 2) pwm2 = value.toInt();
-  else
-  {
-    Serial.print("0#");
-    return;
-  }
-  SetPwmOnChannel();
+  cmdstring.remove(0, cmdid.length());
+  cmdstring.replace(':', ' ');
+  cmdstring.trim();
+  char tarray[32];
+  cmdstring.toCharArray(tarray, sizeof(tarray));
+  long steps = atol(tarray);
+  return steps;
+}
+
+float FloatExtract(String cmdid, String cmdstring)
+{
+  cmdstring.remove(0, cmdid.length());
+  cmdstring.replace(':', ' ');
+  cmdstring.trim();
+  char tarray[32];
+  cmdstring.toCharArray(tarray, sizeof(tarray));
+  float steps = atof(tarray);
+  return steps;
+}
+
+void Cmd_TN(String data)
+{
+  thermistorNominal = Extract("TN",data);
+  Serial.print("1#");
+}
+
+void Cmd_TT(String data)
+{
+  thermistorTempNominal = Extract("TT",data);
+  Serial.print("1#");
+}
+
+void Cmd_TC(String data)
+{
+  bCoefficient = Extract("TC",data);
+  Serial.println(bCoefficient);
   Serial.print("1#");
 }
 
 void Cmd_ED(int ch, bool val)
 {
-  if(ch == 1) ch1OnOff = val;
-  else if(ch == 2) ch2OnOff = val;
+  if(ch == 1) 
+  {
+    ch1OnOff = val;
+    if(val)
+      digitalWrite(CHANNEL1, HIGH);
+    else
+      digitalWrite(CHANNEL1, LOW);
+  }
+  else if(ch == 2) 
+  {
+    ch2OnOff = val;
+    if(val)
+      digitalWrite(CHANNEL2, HIGH);
+    else
+      digitalWrite(CHANNEL2, LOW);
+  }
   else
   {
-    Serial.print("0#");
+    Serial.print("1#");
     return;
   }
-  Serial.print("1#");  
-}
-
-void Cmd_AM(int ch, bool val)
-{
-  if(ch == 1) ch1Auto = val;
-  else if(ch == 2) ch2Auto = val;
-  else
+  if(ch == 1 && bme280_ch1active)
   {
-    Serial.print("0#");
+    Serial.print("1#");  
     return;
   }
+  if(ch == 2 && bme280_ch2active)
+  {
+    Serial.print("1#"); 
+    return; 
+  }
   Serial.print("1#");  
+    return;
 }
 
 void Cmd_G(int ch)
@@ -323,43 +335,25 @@ void Cmd_G(int ch)
   }
 }
 
-void Cmd_P(int ch)
+void Cmd_T(double temp)
 {
-  if(ch == 1)
-  {
-    if(ch1OnOff)
-      Serial.print(pwm1);
-    else 
-      Serial.print(0);
-    Serial.print("#");
-  }
-  if(ch == 2)
-  {
-    if(ch2OnOff)
-      Serial.print(pwm2);
-    else 
-      Serial.print(0);
-    Serial.print("#");
-  }
+  Serial.print((int)(temp * 100));
+  Serial.print("#");
 }
 
 void process(String data)
 {
   if(data == "ID:") Greeting();
-  else if(data.startsWith("S1")) Cmd_S(data, 1);
-  else if(data.startsWith("S2")) Cmd_S(data, 2);
   else if(data == "E1:") Cmd_ED(1, true);
   else if(data == "E2:") Cmd_ED(2, true);
   else if(data == "D1:") Cmd_ED(1, false);
   else if(data == "D2:") Cmd_ED(2, false);
-  else if(data == "A1:") Cmd_AM(1, true);
-  else if(data == "A2:") Cmd_AM(2, true);
-  else if(data == "M1:") Cmd_AM(1, false);
-  else if(data == "M2:") Cmd_AM(2, false);
   else if(data == "G1:") Cmd_G(1);
   else if(data == "G2:") Cmd_G(2);
-  else if(data == "P1:") Cmd_P(1);
-  else if(data == "P2:") Cmd_P(2);
+  else if(data.startsWith("TN")) Cmd_TN(data);
+  else if(data.startsWith("TC")) Cmd_TC(data);
+  else if(data.startsWith("TT")) Cmd_TT(data);
+  else if(data == "T:") Cmd_T(ThermistorReadout());
   else
   {
     Serial.print("0#");
@@ -397,9 +391,8 @@ void loop() {
     // Execute this all 10 seconds    
     timestamp += 10000; 
     if(bme280_ch1active)
-      EnvironmentReadout(bmeCh1, Channel1);
+      EnvironmentReadout(Channel1);
     if(bme280_ch2active)
-      EnvironmentReadout(bmeCh2, Channel2);
-    SetPwmOnChannel();
+      EnvironmentReadout(Channel2);
   }
 }

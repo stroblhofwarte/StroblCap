@@ -35,18 +35,8 @@ namespace ASCOM.StroblCap
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.chkTrace = new System.Windows.Forms.CheckBox();
-            this.textBoxName1 = new System.Windows.Forms.TextBox();
-            this.textBoxName2 = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.textBoxDesc1 = new System.Windows.Forms.TextBox();
-            this.textBoxDesc2 = new System.Windows.Forms.TextBox();
-            this.textBoxDefault1 = new System.Windows.Forms.TextBox();
-            this.textBoxDefault2 = new System.Windows.Forms.TextBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
             this.comboBoxComPort = new System.Windows.Forms.ComboBox();
+            this.checkBoxThermistor = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.picASCOM)).BeginInit();
             this.SuspendLayout();
             // 
@@ -55,7 +45,7 @@ namespace ASCOM.StroblCap
             this.cmdOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdOK.BackColor = System.Drawing.SystemColors.Control;
             this.cmdOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.cmdOK.Location = new System.Drawing.Point(526, 317);
+            this.cmdOK.Location = new System.Drawing.Point(343, 155);
             this.cmdOK.Name = "cmdOK";
             this.cmdOK.Size = new System.Drawing.Size(59, 24);
             this.cmdOK.TabIndex = 0;
@@ -68,7 +58,7 @@ namespace ASCOM.StroblCap
             this.cmdCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdCancel.BackColor = System.Drawing.SystemColors.Control;
             this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cmdCancel.Location = new System.Drawing.Point(526, 347);
+            this.cmdCancel.Location = new System.Drawing.Point(343, 185);
             this.cmdCancel.Name = "cmdCancel";
             this.cmdCancel.Size = new System.Drawing.Size(59, 25);
             this.cmdCancel.TabIndex = 1;
@@ -91,7 +81,7 @@ namespace ASCOM.StroblCap
             this.picASCOM.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.picASCOM.Cursor = System.Windows.Forms.Cursors.Hand;
             this.picASCOM.Image = global::ASCOM.StroblCap.Properties.Resources.ASCOM;
-            this.picASCOM.Location = new System.Drawing.Point(537, 9);
+            this.picASCOM.Location = new System.Drawing.Point(354, 9);
             this.picASCOM.Name = "picASCOM";
             this.picASCOM.Size = new System.Drawing.Size(48, 56);
             this.picASCOM.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
@@ -115,7 +105,7 @@ namespace ASCOM.StroblCap
             // 
             this.label3.AutoSize = true;
             this.label3.ForeColor = System.Drawing.Color.Silver;
-            this.label3.Location = new System.Drawing.Point(53, 117);
+            this.label3.Location = new System.Drawing.Point(15, 117);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(55, 13);
             this.label3.TabIndex = 10;
@@ -125,137 +115,40 @@ namespace ASCOM.StroblCap
             // 
             this.chkTrace.AutoSize = true;
             this.chkTrace.ForeColor = System.Drawing.Color.Silver;
-            this.chkTrace.Location = new System.Drawing.Point(436, 347);
+            this.chkTrace.Location = new System.Drawing.Point(283, 190);
             this.chkTrace.Name = "chkTrace";
             this.chkTrace.Size = new System.Drawing.Size(54, 17);
             this.chkTrace.TabIndex = 11;
             this.chkTrace.Text = "Trace";
             this.chkTrace.UseVisualStyleBackColor = true;
             // 
-            // textBoxName1
-            // 
-            this.textBoxName1.Location = new System.Drawing.Point(127, 181);
-            this.textBoxName1.Name = "textBoxName1";
-            this.textBoxName1.Size = new System.Drawing.Size(130, 20);
-            this.textBoxName1.TabIndex = 12;
-            this.textBoxName1.Text = "AnalogSW1";
-            // 
-            // textBoxName2
-            // 
-            this.textBoxName2.Location = new System.Drawing.Point(127, 207);
-            this.textBoxName2.Name = "textBoxName2";
-            this.textBoxName2.Size = new System.Drawing.Size(130, 20);
-            this.textBoxName2.TabIndex = 13;
-            this.textBoxName2.Text = "AnalogSW2";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.ForeColor = System.Drawing.Color.Silver;
-            this.label4.Location = new System.Drawing.Point(26, 184);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(82, 13);
-            this.label4.TabIndex = 16;
-            this.label4.Text = "Switch Name 1:";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.ForeColor = System.Drawing.Color.Silver;
-            this.label5.Location = new System.Drawing.Point(26, 210);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(82, 13);
-            this.label5.TabIndex = 17;
-            this.label5.Text = "Switch Name 2:";
-            // 
-            // textBoxDesc1
-            // 
-            this.textBoxDesc1.Location = new System.Drawing.Point(263, 181);
-            this.textBoxDesc1.Name = "textBoxDesc1";
-            this.textBoxDesc1.Size = new System.Drawing.Size(227, 20);
-            this.textBoxDesc1.TabIndex = 20;
-            this.textBoxDesc1.Text = "Description1";
-            // 
-            // textBoxDesc2
-            // 
-            this.textBoxDesc2.Location = new System.Drawing.Point(263, 207);
-            this.textBoxDesc2.Name = "textBoxDesc2";
-            this.textBoxDesc2.Size = new System.Drawing.Size(227, 20);
-            this.textBoxDesc2.TabIndex = 21;
-            this.textBoxDesc2.Text = "Description2";
-            // 
-            // textBoxDefault1
-            // 
-            this.textBoxDefault1.Location = new System.Drawing.Point(496, 181);
-            this.textBoxDefault1.Name = "textBoxDefault1";
-            this.textBoxDefault1.Size = new System.Drawing.Size(73, 20);
-            this.textBoxDefault1.TabIndex = 24;
-            this.textBoxDefault1.Text = "50";
-            // 
-            // textBoxDefault2
-            // 
-            this.textBoxDefault2.Location = new System.Drawing.Point(496, 207);
-            this.textBoxDefault2.Name = "textBoxDefault2";
-            this.textBoxDefault2.Size = new System.Drawing.Size(73, 20);
-            this.textBoxDefault2.TabIndex = 25;
-            this.textBoxDefault2.Text = "50";
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.ForeColor = System.Drawing.Color.Silver;
-            this.label8.Location = new System.Drawing.Point(124, 156);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(38, 13);
-            this.label8.TabIndex = 28;
-            this.label8.Text = "Name:";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.ForeColor = System.Drawing.Color.Silver;
-            this.label9.Location = new System.Drawing.Point(260, 156);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(63, 13);
-            this.label9.TabIndex = 29;
-            this.label9.Text = "Description:";
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.ForeColor = System.Drawing.Color.Silver;
-            this.label10.Location = new System.Drawing.Point(493, 156);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(73, 13);
-            this.label10.TabIndex = 30;
-            this.label10.Text = "Startup value:";
-            // 
             // comboBoxComPort
             // 
             this.comboBoxComPort.FormattingEnabled = true;
-            this.comboBoxComPort.Location = new System.Drawing.Point(127, 114);
+            this.comboBoxComPort.Location = new System.Drawing.Point(89, 114);
             this.comboBoxComPort.Name = "comboBoxComPort";
             this.comboBoxComPort.Size = new System.Drawing.Size(90, 21);
             this.comboBoxComPort.TabIndex = 31;
+            // 
+            // checkBoxThermistor
+            // 
+            this.checkBoxThermistor.AutoSize = true;
+            this.checkBoxThermistor.ForeColor = System.Drawing.Color.Silver;
+            this.checkBoxThermistor.Location = new System.Drawing.Point(87, 141);
+            this.checkBoxThermistor.Name = "checkBoxThermistor";
+            this.checkBoxThermistor.Size = new System.Drawing.Size(226, 17);
+            this.checkBoxThermistor.TabIndex = 32;
+            this.checkBoxThermistor.Text = "Use Thermistor for Channel 1 Temperature";
+            this.checkBoxThermistor.UseVisualStyleBackColor = true;
             // 
             // SetupDialogForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(595, 380);
+            this.ClientSize = new System.Drawing.Size(412, 218);
+            this.Controls.Add(this.checkBoxThermistor);
             this.Controls.Add(this.comboBoxComPort);
-            this.Controls.Add(this.label10);
-            this.Controls.Add(this.label9);
-            this.Controls.Add(this.label8);
-            this.Controls.Add(this.textBoxDefault2);
-            this.Controls.Add(this.textBoxDefault1);
-            this.Controls.Add(this.textBoxDesc2);
-            this.Controls.Add(this.textBoxDesc1);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.textBoxName2);
-            this.Controls.Add(this.textBoxName1);
             this.Controls.Add(this.chkTrace);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -285,17 +178,7 @@ namespace ASCOM.StroblCap
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkTrace;
-        private System.Windows.Forms.TextBox textBoxName1;
-        private System.Windows.Forms.TextBox textBoxName2;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.TextBox textBoxDesc1;
-        private System.Windows.Forms.TextBox textBoxDesc2;
-        private System.Windows.Forms.TextBox textBoxDefault1;
-        private System.Windows.Forms.TextBox textBoxDefault2;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label10;
         private System.Windows.Forms.ComboBox comboBoxComPort;
+        private System.Windows.Forms.CheckBox checkBoxThermistor;
     }
 }
